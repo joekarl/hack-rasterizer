@@ -1,2 +1,2 @@
-# hack-renderer
-Flexible software renderer
+# hack-rasterizer
+Flexible software rasterizer
