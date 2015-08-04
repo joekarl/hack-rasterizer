@@ -51,6 +51,12 @@ struct __HACK_Scanline {
 template <typename T>
 void lerp(const T &v1, const T &v2, float lerp, T &output);
 
+template<>
+void lerp<float>(const float &f1, const float &f2, float lerp, float &output)
+{
+    output = (f2 - f1) * lerp + f1;
+}
+
 /**
  * Rasterize a set of triangles
  * polygonAttributes - <ATTR_TYPE>[] - this array holds all of the per vertex information for all of our triangles
@@ -160,6 +166,8 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
                 float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
                 lerp(v1->varying, v2->varying, lerpVal, scanline->leftVarying);
                 lerp(v1->varying, v2->varying, lerpVal, scanline->rightVarying);
+                lerp(v1->z, v2->z, lerpVal, scanline->leftZ);
+                lerp(v1->z, v2->z, lerpVal, scanline->rightZ);
             }
         } else {
         
@@ -176,9 +184,11 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
                 float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
                 if (x == scanline->leftX) {
                     lerp(v1->varying, v2->varying, lerpVal, scanline->leftVarying);
+                    lerp(v1->z, v2->z, lerpVal, scanline->leftZ);
                 }
                 if (x == scanline->rightX) {
                     lerp(v1->varying, v2->varying, lerpVal, scanline->rightVarying);
+                    lerp(v1->z, v2->z, lerpVal, scanline->rightZ);
                 }
             }
         }
@@ -199,10 +209,12 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             // lerp the left and right of the scanline into
             float lerpVal = (float)(j - scanline->leftX) / (float)(scanline->rightX - scanline->leftX);
             lerp<VARY_TYPE>(scanline->leftVarying, scanline->rightVarying, lerpVal, lerpedVarying);
+            float pixelZ = -1;
+            lerp(scanline->leftZ, scanline->rightZ, lerpVal, pixelZ);
             int pixelX = j;
             int pixelY = i + bottomScanY;
             
-            NSLog(@"shading pixel {%d, %d}", pixelX, pixelY);
+            NSLog(@"shading pixel {%d, %d, %f}", pixelX, pixelY, pixelZ);
             fragmentShader(lerpedVarying, uniforms, pixelOutput);
             
             // update depth and color buffers with our rendering context
