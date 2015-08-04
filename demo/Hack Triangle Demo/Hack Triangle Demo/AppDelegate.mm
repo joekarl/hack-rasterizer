@@ -10,7 +10,6 @@
 #include "demoTypes.hpp"
 #include "hack.hpp"
 
-
 inline void vShader(const VertexAttribute &vert, const Uniform &uniforms, HACK_vertex<VertexVarying> &output)
 {
     output.position = vert.position;
@@ -21,8 +20,6 @@ inline void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_
 {
     output.color.xyz = varying.color;
     output.color._a = 1.0;
-    
-    //NSLog(@"color is {%f, %f, %f, %f}", output.color.r, output.color.g, output.color.b, output.color.a);
 }
 
 @interface AppDelegate ()
@@ -65,11 +62,12 @@ inline void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_
     HACK_Scanline<VertexVarying> scanlines[640];
     
     HACK_Context ctx = {640, 480};
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         HACK_rasterize_triangles(ctx, vertices, uniforms, 3, &vShader, &fShader, scanlines);
     }
     
     NSLog(@"Finished");
+    exit(0);
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {

@@ -59,6 +59,9 @@ struct HACK_Scanline {
  * fragmentShader - fn(const VARY_TYPE & varying, const UNIF_TYPE & uniform, HACK_pixel & output)
  *                - function that determines the color of a pixel based on varyings and uniforms
  *                - your shader function should populate the output parameter
+ * scanlines - an array of scanlines that will be used internally for scan conversion
+ *           - should be equal to the height of the raster
+ *           - this seems superfluous but there's no memory allocation inside of hack so these must be supplied elsewhere
  */
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
 inline void HACK_rasterize_triangles(const HACK_Context &ctx,
@@ -189,19 +192,19 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
         
         // clip scanline to ctx space
         // TODO(karl): check against ctx x coords
-        // TODO(karl): maybe check flag to see if we should respect pixel z value changes? if not do depth buffer optimization here
         
         for (int j = scanline.leftX; j <= scanline.rightX; ++j) {
             // lerp the left and right of the scanline into
-            float lerpVal = (float)(j - scanline.leftX) / (float)(scanline.rightX - scanline.leftX);
+            float lerpVal = static_cast<float>(j - scanline.leftX) / static_cast<float>(scanline.rightX - scanline.leftX);
             lerp<VARY_TYPE>(scanline.leftVarying, scanline.rightVarying, lerpVal, lerpedVarying);
             float pixelZ = -1;
             lerp(scanline.leftZ, scanline.rightZ, lerpVal, pixelZ);
-            int pixelX = j;
-            int pixelY = i + bottomScanY;
+            int pixelX = j + halfWidth;
+            int pixelY = i + bottomScanY + halfHeight;
             
             //NSLog(@"shading pixel {%d, %d, %f}", pixelX, pixelY, pixelZ);
             fragmentShader(lerpedVarying, uniforms, pixelOutput);
+            //NSLog(@"color is {%f, %f, %f, %f}", pixelOutput.color.r, pixelOutput.color.g, pixelOutput.color.b, pixelOutput.color.a);
             
             // update depth and color buffers with our rendering context
             
