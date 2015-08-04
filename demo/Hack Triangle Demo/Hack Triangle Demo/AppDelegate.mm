@@ -11,16 +11,22 @@
 #include "hack.hpp"
 
 
-void vShader(const Attribute &attr, const Uniform &uniforms, HACK_vertex<Varying> &output)
+void vShader(const VertexAttribute &vert, const Uniform &uniforms, HACK_vertex<VertexVarying> &output)
 {
-    NSLog(@"x is %d", attr.x);
-    output.varying.vX = attr.x * 10;
+    output.x = vert.position.x;
+    output.y = vert.position.y;
+    output.z = vert.position.z;
+    output.varying.color = vert.color;
 }
 
-void fShader(const Varying &varying, const Uniform &uniforms, HACK_pixel &output)
+void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_pixel &output)
 {
-    NSLog(@"vx is %d", varying.vX);
-    output.z = varying.vX;
+    output.r = varying.color.r;
+    output.g = varying.color.g;
+    output.b = varying.color.b;
+    output.a = varying.color.a;
+    
+    NSLog(@"color is {%f, %f, %f, %f}", output.r, output.g, output.b, output.a);
 }
 
 @interface AppDelegate ()
@@ -33,14 +39,31 @@ void fShader(const Varying &varying, const Uniform &uniforms, HACK_pixel &output
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
     
-    Attribute attrs[3];
-    attrs[0].x = 1;
-    attrs[1].x = 2;
-    attrs[2].x = 3;
+    VertexAttribute vertices[3];
+    vertices[0].position.x = -0.5;
+    vertices[0].position.y = -0.5;
+    vertices[0].position.z = 0.5;
+    vertices[1].position.x = 0.0;
+    vertices[1].position.y = 0.5;
+    vertices[1].position.z = 0.5;
+    vertices[2].position.x = 0.5;
+    vertices[2].position.y = -0.5;
+    vertices[2].position.z = 0.5;
+    
+    vertices[0].color.r = 1.0;
+    vertices[0].color.g = 0.0;
+    vertices[0].color.b = 0.0;
+    vertices[1].color.r = 0.0;
+    vertices[1].color.g = 1.0;
+    vertices[1].color.b = 0.0;
+    vertices[2].color.r = 0.0;
+    vertices[2].color.g = 0.0;
+    vertices[2].color.b = 1.0;
+    
     Uniform uniforms;
     
-    HACK_Context ctx;
-    HACK_rasterize_triangles(ctx, attrs, uniforms, 3, &vShader, &fShader);
+    HACK_Context ctx = {640, 480};
+    HACK_rasterize_triangles(ctx, vertices, uniforms, 3, &vShader, &fShader);
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {

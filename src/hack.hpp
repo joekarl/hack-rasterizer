@@ -1,13 +1,19 @@
 #ifndef HACK_H_
 #define HACK_H_
 
+#include <algorithm>
 #include <alloca.h>
+#include <limits.h>
+#include <math.h>
+
 
 /**
  * Our rendering context
  */
 struct HACK_Context
-{};
+{
+    int width, height;
+};
 
 /**
  * Output of a fragment shader, 
@@ -35,7 +41,7 @@ template <typename VARY_TYPE>
 struct __HACK_Scanline {
     int leftX, rightX;
     float leftZ, rightZ;
-    VARY_TYPE leftVaryings, rightVaryings;
+    VARY_TYPE leftVarying, rightVarying;
 };
 
 /**
@@ -96,43 +102,107 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
     vertexShader(polygonAttributes[triangleId + 1], uniforms, vertexShaderOutput[1]);
     vertexShader(polygonAttributes[triangleId + 2], uniforms, vertexShaderOutput[2]);
     
+    int halfHeight = ctx.height / 2;
+    int halfWidth = ctx.width / 2;
+    
     // calc polygon normal and short circuit if needed
     
     // calculate number of scanlines needed for triangle
-    // TODO(karl): calc tri y coords
     // TODO(karl): clip to ctx y coords
-    int bottomScanY, topScanY;
-    int scanlineNum = 5; // topScanY - bottomScanY;
+    int bottomScanY = ceil(std::min(std::min(vertexShaderOutput[0].y * halfHeight, vertexShaderOutput[1].y * halfHeight), vertexShaderOutput[2].y * halfHeight));
+    int topScanY = ceil(std::max(std::max(vertexShaderOutput[0].y * halfHeight, vertexShaderOutput[1].y * halfHeight), vertexShaderOutput[2].y * halfHeight));
+    int scanlineNum = topScanY - bottomScanY;
     
     // alloc the scanline memory from the stack because we don't know how many scanlines we'll need per tri
     __HACK_Scanline<VARY_TYPE> *scanlines = (__HACK_Scanline<VARY_TYPE> *) alloca(sizeof(__HACK_Scanline<VARY_TYPE>) * scanlineNum);
+    for (int i = 0; i < scanlineNum; ++i) {
+        scanlines[i].leftX = INT_MAX;
+        scanlines[i].rightX = INT_MIN;
+    }
     
     // populate scanlines with values
     // this is where actual scanline conversion is done
     // TODO(karl): actually do it
-    
+    for (int i = 0; i < 3; ++i) {
+        HACK_vertex<VARY_TYPE> *v1 = &vertexShaderOutput[i];
+        HACK_vertex<VARY_TYPE> *v2;
+        if (i == 2) {
+            v2 = &vertexShaderOutput[0];
+        } else {
+            v2 = &vertexShaderOutput[i + 1];
+        }
+        
+        if (v1->y > v2->y) {
+            // if our y is decreasing instead of increasing we need to flip ordering
+            HACK_vertex<VARY_TYPE> *temp = v1;
+            v1 = v2;
+            v2 = temp;
+        }
+        
+        float dy = (v2->y - v1->y) * halfHeight;
+        float dx = (v2->x - v2->y) * halfWidth;
+        int bottomY = ceil(v1->y * halfHeight);
+        int topY = ceil(v2->y * halfHeight);
+        
+        if (dy == 0) {
+            // we skip horizontal lines because they'll be filled by diagonals later
+            // also horizontal lines will fill things with NaNs because of division by zero...
+            continue;
+        }
+        
+        if (dx == 0) {
+            // have to do special case for vertical line
+            int x = ceil(v2->x) * halfWidth;
+            for (int y = bottomY; y <= topY; ++y) {
+                __HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
+                scanline->leftX = std::min(scanline->leftX, x);
+                scanline->rightX = std::max(scanline->rightX, x);
+                float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
+                lerp(v1->varying, v2->varying, lerpVal, scanline->leftVarying);
+                lerp(v1->varying, v2->varying, lerpVal, scanline->rightVarying);
+            }
+        } else {
+        
+            // this is slow, should be optimized
+            float gradient = dx / dy;
+            
+            for (int y = bottomY; y <= topY; ++y) {
+                // line equation
+                int x = ceil(v1->x * halfWidth + (y - v1->y * halfHeight) * gradient);
+                
+                __HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
+                scanline->leftX = std::min(scanline->leftX, x);
+                scanline->rightX = std::max(scanline->rightX, x);
+                float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
+                if (x == scanline->leftX) {
+                    lerp(v1->varying, v2->varying, lerpVal, scanline->leftVarying);
+                }
+                if (x == scanline->rightX) {
+                    lerp(v1->varying, v2->varying, lerpVal, scanline->rightVarying);
+                }
+            }
+        }
+    }
     
 
     // we have all of our scanlines setup, now just loop through shading each pixel in the scanline
     VARY_TYPE lerpedVarying;
     HACK_pixel pixelOutput;
     for (int i = 0; i < scanlineNum; ++i) {
-        __HACK_Scanline<VARY_TYPE> scanline = scanlines[i];
-        
-        // we wouldn't really do this, this is for testing that lerping is actually happening
-        // in real code these would already be set for us during the scanline conversion process
-        scanline.leftX = 0;
-        scanline.rightX = 5;
+        __HACK_Scanline<VARY_TYPE> *scanline = &scanlines[i];
         
         // clip scanline to ctx space
         // TODO(karl): check against ctx x coords
         // TODO(karl): maybe check flag to see if we should respect pixel z value changes? if not do depth buffer optimization here
         
-        for (int j = scanline.leftX; j <= scanline.rightX; ++j) {
+        for (int j = scanline->leftX; j <= scanline->rightX; ++j) {
             // lerp the left and right of the scanline into
-            float lerpVal = (float)(j - scanline.leftX) / (float)(scanline.rightX - scanline.leftX);
-            lerp<VARY_TYPE>(vertexShaderOutput[0].varying, vertexShaderOutput[1].varying, lerpVal, lerpedVarying);
+            float lerpVal = (float)(j - scanline->leftX) / (float)(scanline->rightX - scanline->leftX);
+            lerp<VARY_TYPE>(scanline->leftVarying, scanline->rightVarying, lerpVal, lerpedVarying);
+            int pixelX = j;
+            int pixelY = i + bottomScanY;
             
+            NSLog(@"shading pixel {%d, %d}", pixelX, pixelY);
             fragmentShader(lerpedVarying, uniforms, pixelOutput);
             
             // update depth and color buffers with our rendering context
