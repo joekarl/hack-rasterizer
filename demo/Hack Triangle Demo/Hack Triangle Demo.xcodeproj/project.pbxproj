@@ -1,0 +1,522 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CBD76BDD1B701D06001EA090 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = CBD76BDC1B701D06001EA090 /* AppDelegate.mm */; };
+		CBD76BE01B701D06001EA090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = CBD76BDF1B701D06001EA090 /* main.m */; };
+		CBD76BE21B701D06001EA090 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CBD76BE11B701D06001EA090 /* Assets.xcassets */; };
+		CBD76BE51B701D06001EA090 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = CBD76BE31B701D06001EA090 /* MainMenu.xib */; };
+		CBD76BF01B701D07001EA090 /* Hack_Triangle_DemoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CBD76BEF1B701D07001EA090 /* Hack_Triangle_DemoTests.m */; };
+		CBD76BFB1B701D07001EA090 /* Hack_Triangle_DemoUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = CBD76BFA1B701D07001EA090 /* Hack_Triangle_DemoUITests.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CBD76BEC1B701D07001EA090 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CBD76BD01B701D06001EA090 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CBD76BD71B701D06001EA090;
+			remoteInfo = "Hack Triangle Demo";
+		};
+		CBD76BF71B701D07001EA090 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CBD76BD01B701D06001EA090 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CBD76BD71B701D06001EA090;
+			remoteInfo = "Hack Triangle Demo";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		CBD76BD81B701D06001EA090 /* Hack Triangle Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Hack Triangle Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBD76BDB1B701D06001EA090 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		CBD76BDC1B701D06001EA090 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
+		CBD76BDF1B701D06001EA090 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		CBD76BE11B701D06001EA090 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CBD76BE41B701D06001EA090 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		CBD76BE61B701D06001EA090 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CBD76BEB1B701D07001EA090 /* Hack Triangle DemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Hack Triangle DemoTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBD76BEF1B701D07001EA090 /* Hack_Triangle_DemoTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Hack_Triangle_DemoTests.m; sourceTree = "<group>"; };
+		CBD76BF11B701D07001EA090 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CBD76BF61B701D07001EA090 /* Hack Triangle DemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Hack Triangle DemoUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBD76BFA1B701D07001EA090 /* Hack_Triangle_DemoUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Hack_Triangle_DemoUITests.m; sourceTree = "<group>"; };
+		CBD76BFC1B701D07001EA090 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CBD76C121B70355B001EA090 /* hack.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = hack.hpp; sourceTree = "<group>"; };
+		CBD76C151B7040B3001EA090 /* demoTypes.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = demoTypes.hpp; path = "Hack Triangle Demo/demoTypes.hpp"; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CBD76BD51B701D06001EA090 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBD76BE81B701D07001EA090 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBD76BF31B701D07001EA090 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CBD76BCF1B701D06001EA090 = {
+			isa = PBXGroup;
+			children = (
+				CBD76BDA1B701D06001EA090 /* Hack Triangle Demo */,
+				CBD76BEE1B701D07001EA090 /* Hack Triangle DemoTests */,
+				CBD76BF91B701D07001EA090 /* Hack Triangle DemoUITests */,
+				CBD76BD91B701D06001EA090 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CBD76BD91B701D06001EA090 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CBD76BD81B701D06001EA090 /* Hack Triangle Demo.app */,
+				CBD76BEB1B701D07001EA090 /* Hack Triangle DemoTests.xctest */,
+				CBD76BF61B701D07001EA090 /* Hack Triangle DemoUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CBD76BDA1B701D06001EA090 /* Hack Triangle Demo */ = {
+			isa = PBXGroup;
+			children = (
+				CBD76C101B70355B001EA090 /* hack_src */,
+				CBD76BDB1B701D06001EA090 /* AppDelegate.h */,
+				CBD76BDC1B701D06001EA090 /* AppDelegate.mm */,
+				CBD76C151B7040B3001EA090 /* demoTypes.hpp */,
+				CBD76BE11B701D06001EA090 /* Assets.xcassets */,
+				CBD76BE31B701D06001EA090 /* MainMenu.xib */,
+				CBD76BE61B701D06001EA090 /* Info.plist */,
+				CBD76BDE1B701D06001EA090 /* Supporting Files */,
+			);
+			path = "Hack Triangle Demo";
+			sourceTree = "<group>";
+		};
+		CBD76BDE1B701D06001EA090 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				CBD76BDF1B701D06001EA090 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		CBD76BEE1B701D07001EA090 /* Hack Triangle DemoTests */ = {
+			isa = PBXGroup;
+			children = (
+				CBD76BEF1B701D07001EA090 /* Hack_Triangle_DemoTests.m */,
+				CBD76BF11B701D07001EA090 /* Info.plist */,
+			);
+			path = "Hack Triangle DemoTests";
+			sourceTree = "<group>";
+		};
+		CBD76BF91B701D07001EA090 /* Hack Triangle DemoUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CBD76BFA1B701D07001EA090 /* Hack_Triangle_DemoUITests.m */,
+				CBD76BFC1B701D07001EA090 /* Info.plist */,
+			);
+			path = "Hack Triangle DemoUITests";
+			sourceTree = "<group>";
+		};
+		CBD76C101B70355B001EA090 /* hack_src */ = {
+			isa = PBXGroup;
+			children = (
+				CBD76C121B70355B001EA090 /* hack.hpp */,
+			);
+			name = hack_src;
+			path = ../../../src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CBD76BD71B701D06001EA090 /* Hack Triangle Demo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CBD76BFF1B701D07001EA090 /* Build configuration list for PBXNativeTarget "Hack Triangle Demo" */;
+			buildPhases = (
+				CBD76BD41B701D06001EA090 /* Sources */,
+				CBD76BD51B701D06001EA090 /* Frameworks */,
+				CBD76BD61B701D06001EA090 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Hack Triangle Demo";
+			productName = "Hack Triangle Demo";
+			productReference = CBD76BD81B701D06001EA090 /* Hack Triangle Demo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CBD76BEA1B701D07001EA090 /* Hack Triangle DemoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CBD76C021B701D07001EA090 /* Build configuration list for PBXNativeTarget "Hack Triangle DemoTests" */;
+			buildPhases = (
+				CBD76BE71B701D07001EA090 /* Sources */,
+				CBD76BE81B701D07001EA090 /* Frameworks */,
+				CBD76BE91B701D07001EA090 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CBD76BED1B701D07001EA090 /* PBXTargetDependency */,
+			);
+			name = "Hack Triangle DemoTests";
+			productName = "Hack Triangle DemoTests";
+			productReference = CBD76BEB1B701D07001EA090 /* Hack Triangle DemoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CBD76BF51B701D07001EA090 /* Hack Triangle DemoUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CBD76C051B701D07001EA090 /* Build configuration list for PBXNativeTarget "Hack Triangle DemoUITests" */;
+			buildPhases = (
+				CBD76BF21B701D07001EA090 /* Sources */,
+				CBD76BF31B701D07001EA090 /* Frameworks */,
+				CBD76BF41B701D07001EA090 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CBD76BF81B701D07001EA090 /* PBXTargetDependency */,
+			);
+			name = "Hack Triangle DemoUITests";
+			productName = "Hack Triangle DemoUITests";
+			productReference = CBD76BF61B701D07001EA090 /* Hack Triangle DemoUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CBD76BD01B701D06001EA090 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0700;
+				ORGANIZATIONNAME = "Karl Kirch";
+				TargetAttributes = {
+					CBD76BD71B701D06001EA090 = {
+						CreatedOnToolsVersion = 7.0;
+					};
+					CBD76BEA1B701D07001EA090 = {
+						CreatedOnToolsVersion = 7.0;
+						TestTargetID = CBD76BD71B701D06001EA090;
+					};
+					CBD76BF51B701D07001EA090 = {
+						CreatedOnToolsVersion = 7.0;
+						TestTargetID = CBD76BD71B701D06001EA090;
+					};
+				};
+			};
+			buildConfigurationList = CBD76BD31B701D06001EA090 /* Build configuration list for PBXProject "Hack Triangle Demo" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CBD76BCF1B701D06001EA090;
+			productRefGroup = CBD76BD91B701D06001EA090 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CBD76BD71B701D06001EA090 /* Hack Triangle Demo */,
+				CBD76BEA1B701D07001EA090 /* Hack Triangle DemoTests */,
+				CBD76BF51B701D07001EA090 /* Hack Triangle DemoUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CBD76BD61B701D06001EA090 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBD76BE21B701D06001EA090 /* Assets.xcassets in Resources */,
+				CBD76BE51B701D06001EA090 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBD76BE91B701D07001EA090 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBD76BF41B701D07001EA090 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CBD76BD41B701D06001EA090 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBD76BE01B701D06001EA090 /* main.m in Sources */,
+				CBD76BDD1B701D06001EA090 /* AppDelegate.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBD76BE71B701D07001EA090 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBD76BF01B701D07001EA090 /* Hack_Triangle_DemoTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CBD76BF21B701D07001EA090 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBD76BFB1B701D07001EA090 /* Hack_Triangle_DemoUITests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CBD76BED1B701D07001EA090 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CBD76BD71B701D06001EA090 /* Hack Triangle Demo */;
+			targetProxy = CBD76BEC1B701D07001EA090 /* PBXContainerItemProxy */;
+		};
+		CBD76BF81B701D07001EA090 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CBD76BD71B701D06001EA090 /* Hack Triangle Demo */;
+			targetProxy = CBD76BF71B701D07001EA090 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		CBD76BE31B701D06001EA090 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				CBD76BE41B701D06001EA090 /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		CBD76BFD1B701D07001EA090 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CBD76BFE1B701D07001EA090 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		CBD76C001B701D07001EA090 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Hack Triangle Demo/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karlkirch.Hack-Triangle-Demo";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CBD76C011B701D07001EA090 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Hack Triangle Demo/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karlkirch.Hack-Triangle-Demo";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CBD76C031B701D07001EA090 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Hack Triangle DemoTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karlkirch.Hack-Triangle-DemoTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hack Triangle Demo.app/Contents/MacOS/Hack Triangle Demo";
+			};
+			name = Debug;
+		};
+		CBD76C041B701D07001EA090 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Hack Triangle DemoTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karlkirch.Hack-Triangle-DemoTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hack Triangle Demo.app/Contents/MacOS/Hack Triangle Demo";
+			};
+			name = Release;
+		};
+		CBD76C061B701D07001EA090 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Hack Triangle DemoUITests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karlkirch.Hack-Triangle-DemoUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = "Hack Triangle Demo";
+				USES_XCTRUNNER = YES;
+			};
+			name = Debug;
+		};
+		CBD76C071B701D07001EA090 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Hack Triangle DemoUITests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.karlkirch.Hack-Triangle-DemoUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = "Hack Triangle Demo";
+				USES_XCTRUNNER = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CBD76BD31B701D06001EA090 /* Build configuration list for PBXProject "Hack Triangle Demo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBD76BFD1B701D07001EA090 /* Debug */,
+				CBD76BFE1B701D07001EA090 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CBD76BFF1B701D07001EA090 /* Build configuration list for PBXNativeTarget "Hack Triangle Demo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBD76C001B701D07001EA090 /* Debug */,
+				CBD76C011B701D07001EA090 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CBD76C021B701D07001EA090 /* Build configuration list for PBXNativeTarget "Hack Triangle DemoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBD76C031B701D07001EA090 /* Debug */,
+				CBD76C041B701D07001EA090 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CBD76C051B701D07001EA090 /* Build configuration list for PBXNativeTarget "Hack Triangle DemoUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBD76C061B701D07001EA090 /* Debug */,
+				CBD76C071B701D07001EA090 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CBD76BD01B701D06001EA090 /* Project object */;
+}
