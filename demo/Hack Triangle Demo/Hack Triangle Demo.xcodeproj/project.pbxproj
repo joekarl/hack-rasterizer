@@ -33,6 +33,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		CB3153091B71656A003D2F19 /* hack_types.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = hack_types.hpp; sourceTree = "<group>"; };
 		CBD76BD81B701D06001EA090 /* Hack Triangle Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Hack Triangle Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CBD76BDB1B701D06001EA090 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		CBD76BDC1B701D06001EA090 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
@@ -140,6 +141,7 @@
 			isa = PBXGroup;
 			children = (
 				CBD76C121B70355B001EA090 /* hack.hpp */,
+				CB3153091B71656A003D2F19 /* hack_types.hpp */,
 			);
 			name = hack_src;
 			path = ../../../src;

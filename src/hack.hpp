@@ -1,6 +1,8 @@
 #ifndef HACK_H_
 #define HACK_H_
 
+#include "hack_types.hpp"
+
 #include <algorithm>
 #include <alloca.h>
 #include <limits.h>
@@ -22,7 +24,7 @@ struct HACK_Context
  * contains the color and z depth of our pixel
  */
 struct HACK_pixel {
-    float r, g, b, a, z;
+    HACK_Vec4 color;
 };
 
 /**
@@ -31,7 +33,7 @@ struct HACK_pixel {
  */
 template <typename VARY_TYPE>
 struct HACK_vertex {
-    float x, y, z;
+    HACK_Vec3 position;
     VARY_TYPE varying;
 };
 
@@ -45,19 +47,6 @@ struct HACK_Scanline {
     float leftZ, rightZ;
     VARY_TYPE leftVarying, rightVarying;
 };
-
-/**
- * lerp function template
- * Anything that is used as a VARY_TYPE must have lerp implemented for it
- */
-template <typename T>
-void lerp(const T &v1, const T &v2, float lerp, T &output);
-
-template<>
-inline void lerp<float>(const float &f1, const float &f2, float lerp, float &output)
-{
-    output = (f2 - f1) * lerp + f1;
-}
 
 /**
  * Rasterize a set of triangles
@@ -118,8 +107,8 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
     
     // calculate number of scanlines needed for triangle
     // TODO(karl): clip to ctx y coords
-    int bottomScanY = ceil(std::min(std::min(vertexShaderOutput[0].y * halfHeight, vertexShaderOutput[1].y * halfHeight), vertexShaderOutput[2].y * halfHeight));
-    int topScanY = ceil(std::max(std::max(vertexShaderOutput[0].y * halfHeight, vertexShaderOutput[1].y * halfHeight), vertexShaderOutput[2].y * halfHeight));
+    int bottomScanY = ceil(std::min(std::min(vertexShaderOutput[0].position.y * halfHeight, vertexShaderOutput[1].position.y * halfHeight), vertexShaderOutput[2].position.y * halfHeight));
+    int topScanY = ceil(std::max(std::max(vertexShaderOutput[0].position.y * halfHeight, vertexShaderOutput[1].position.y * halfHeight), vertexShaderOutput[2].position.y * halfHeight));
     int scanlineNum = topScanY - bottomScanY;
     
     for (int i = 0; i < scanlineNum; ++i) {
@@ -131,25 +120,21 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
     // this is where actual scanline conversion is done
     // TODO(karl): actually do it
     for (int i = 0; i < 3; ++i) {
-        HACK_vertex<VARY_TYPE> *v1 = &vertexShaderOutput[i];
-        HACK_vertex<VARY_TYPE> *v2;
-        if (i == 2) {
-            v2 = &vertexShaderOutput[0];
-        } else {
-            v2 = &vertexShaderOutput[i + 1];
-        }
+        HACK_vertex<VARY_TYPE> &v1 = vertexShaderOutput[i];
+        HACK_vertex<VARY_TYPE> &v2 = (i == 2) ? vertexShaderOutput[0] : vertexShaderOutput[i + 1];
         
-        if (v1->y > v2->y) {
+        if (v1.position.y > v2.position.y) {
             // if our y is decreasing instead of increasing we need to flip ordering
-            HACK_vertex<VARY_TYPE> *temp = v1;
-            v1 = v2;
-            v2 = temp;
+            std::swap(v1, v2);
         }
         
-        float dy = (v2->y - v1->y) * halfHeight;
-        float dx = (v2->x - v2->y) * halfWidth;
-        int bottomY = ceil(v1->y * halfHeight);
-        int topY = ceil(v2->y * halfHeight);
+        HACK_Vec3 &v1Position = v1.position;
+        HACK_Vec3 &v2Position = v2.position;
+        
+        float dy = (v2Position.y - v1Position.y) * halfHeight;
+        float dx = (v2Position.x - v1Position.x) * halfWidth;
+        int bottomY = ceil(v1Position.y * halfHeight);
+        int topY = ceil(v2Position.y * halfHeight);
         
         if (dy == 0) {
             // we skip horizontal lines because they'll be filled by diagonals later
@@ -159,16 +144,16 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
         
         if (dx == 0) {
             // have to do special case for vertical line
-            int x = ceil(v2->x) * halfWidth;
+            int x = ceil(v2Position.x) * halfWidth;
             for (int y = bottomY; y <= topY; ++y) {
-                HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
-                scanline->leftX = std::min(scanline->leftX, x);
-                scanline->rightX = std::max(scanline->rightX, x);
-                float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
-                lerp(v1->varying, v2->varying, lerpVal, scanline->leftVarying);
-                lerp(v1->varying, v2->varying, lerpVal, scanline->rightVarying);
-                lerp(v1->z, v2->z, lerpVal, scanline->leftZ);
-                lerp(v1->z, v2->z, lerpVal, scanline->rightZ);
+                HACK_Scanline<VARY_TYPE> &scanline = scanlines[y - bottomScanY];
+                scanline.leftX = std::min(scanline.leftX, x);
+                scanline.rightX = std::max(scanline.rightX, x);
+                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
+                lerp(v1.varying, v2.varying, lerpVal, scanline.leftVarying);
+                lerp(v1.varying, v2.varying, lerpVal, scanline.rightVarying);
+                lerp(v1Position.z, v2Position.z, lerpVal, scanline.leftZ);
+                lerp(v1Position.z, v2Position.z, lerpVal, scanline.rightZ);
             }
         } else {
         
@@ -177,19 +162,19 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             
             for (int y = bottomY; y <= topY; ++y) {
                 // line equation
-                int x = ceil(v1->x * halfWidth + (y - v1->y * halfHeight) * gradient);
+                int x = ceil(v1Position.x * halfWidth + (y - v1Position.y * halfHeight) * gradient);
                 
-                HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
-                scanline->leftX = std::min(scanline->leftX, x);
-                scanline->rightX = std::max(scanline->rightX, x);
-                float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
-                if (x == scanline->leftX) {
-                    lerp(v1->varying, v2->varying, lerpVal, scanline->leftVarying);
-                    lerp(v1->z, v2->z, lerpVal, scanline->leftZ);
+                HACK_Scanline<VARY_TYPE> &scanline = scanlines[y - bottomScanY];
+                scanline.leftX = std::min(scanline.leftX, x);
+                scanline.rightX = std::max(scanline.rightX, x);
+                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
+                if (x == scanline.leftX) {
+                    lerp(v1.varying, v2.varying, lerpVal, scanline.leftVarying);
+                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.leftZ);
                 }
-                if (x == scanline->rightX) {
-                    lerp(v1->varying, v2->varying, lerpVal, scanline->rightVarying);
-                    lerp(v1->z, v2->z, lerpVal, scanline->rightZ);
+                if (x == scanline.  rightX) {
+                    lerp(v1.varying, v2.varying, lerpVal, scanline.rightVarying);
+                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.rightZ);
                 }
             }
         }
@@ -200,18 +185,18 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
     VARY_TYPE lerpedVarying;
     HACK_pixel pixelOutput;
     for (int i = 0; i < scanlineNum; ++i) {
-        HACK_Scanline<VARY_TYPE> *scanline = &scanlines[i];
+        HACK_Scanline<VARY_TYPE> &scanline = scanlines[i];
         
         // clip scanline to ctx space
         // TODO(karl): check against ctx x coords
         // TODO(karl): maybe check flag to see if we should respect pixel z value changes? if not do depth buffer optimization here
         
-        for (int j = scanline->leftX; j <= scanline->rightX; ++j) {
+        for (int j = scanline.leftX; j <= scanline.rightX; ++j) {
             // lerp the left and right of the scanline into
-            float lerpVal = (float)(j - scanline->leftX) / (float)(scanline->rightX - scanline->leftX);
-            lerp<VARY_TYPE>(scanline->leftVarying, scanline->rightVarying, lerpVal, lerpedVarying);
+            float lerpVal = (float)(j - scanline.leftX) / (float)(scanline.rightX - scanline.leftX);
+            lerp<VARY_TYPE>(scanline.leftVarying, scanline.rightVarying, lerpVal, lerpedVarying);
             float pixelZ = -1;
-            lerp(scanline->leftZ, scanline->rightZ, lerpVal, pixelZ);
+            lerp(scanline.leftZ, scanline.rightZ, lerpVal, pixelZ);
             int pixelX = j;
             int pixelY = i + bottomScanY;
             
