@@ -6,6 +6,8 @@
 #include <limits.h>
 #include <math.h>
 
+template <typename VARY_TYPE>
+struct __HACK_Scanline;
 
 /**
  * Our rendering context
@@ -38,7 +40,7 @@ struct HACK_vertex {
  * Holds left/right positions and associated varying objects
  */
 template <typename VARY_TYPE>
-struct __HACK_Scanline {
+struct HACK_Scanline {
     int leftX, rightX;
     float leftZ, rightZ;
     VARY_TYPE leftVarying, rightVarying;
@@ -52,7 +54,7 @@ template <typename T>
 void lerp(const T &v1, const T &v2, float lerp, T &output);
 
 template<>
-void lerp<float>(const float &f1, const float &f2, float lerp, float &output)
+inline void lerp<float>(const float &f1, const float &f2, float lerp, float &output)
 {
     output = (f2 - f1) * lerp + f1;
 }
@@ -75,13 +77,13 @@ inline void HACK_rasterize_triangles(const HACK_Context &ctx,
                     const UNIF_TYPE &uniforms,
                     const int vertexCount,
                     void (*vertexShader) (const ATTR_TYPE &attribute, const UNIF_TYPE &uniform, HACK_vertex<VARY_TYPE> &output),
-                    void (*fragmentShader) (const VARY_TYPE &varying, const UNIF_TYPE &uniform, HACK_pixel &output))
+                    void (*fragmentShader) (const VARY_TYPE &varying, const UNIF_TYPE &uniform, HACK_pixel &output),
+                    HACK_Scanline<VARY_TYPE> *scanlines)
 {
+    
     // every three vertexes is a triangle we should rasterize
     for (int v = 0; v < vertexCount;) {
-        // do this in a new function so we can get fancy auto stack allocation semantics
-        // this could be slow :/ not sure at the moment...
-        __HACK_rasterize_triangle(ctx, v, polygonAttributes, uniforms, vertexShader, fragmentShader);
+        __HACK_rasterize_triangle(ctx, v, polygonAttributes, uniforms, vertexShader, fragmentShader, scanlines);
         v += 3;
     }
 }
@@ -100,7 +102,8 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
                                     const ATTR_TYPE *polygonAttributes,
                                     const UNIF_TYPE &uniforms,
                                     void (*vertexShader) (const ATTR_TYPE &attribute, const UNIF_TYPE &uniform, HACK_vertex<VARY_TYPE> &output),
-                                    void (*fragmentShader) (const VARY_TYPE &varying, const UNIF_TYPE &uniform, HACK_pixel &output))
+                                    void (*fragmentShader) (const VARY_TYPE &varying, const UNIF_TYPE &uniform, HACK_pixel &output),
+                                    HACK_Scanline<VARY_TYPE> *scanlines)
 {
     // allocate 3 outputs, one for each vertex
     HACK_vertex<VARY_TYPE> vertexShaderOutput[3];
@@ -119,8 +122,6 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
     int topScanY = ceil(std::max(std::max(vertexShaderOutput[0].y * halfHeight, vertexShaderOutput[1].y * halfHeight), vertexShaderOutput[2].y * halfHeight));
     int scanlineNum = topScanY - bottomScanY;
     
-    // alloc the scanline memory from the stack because we don't know how many scanlines we'll need per tri
-    __HACK_Scanline<VARY_TYPE> *scanlines = (__HACK_Scanline<VARY_TYPE> *) alloca(sizeof(__HACK_Scanline<VARY_TYPE>) * scanlineNum);
     for (int i = 0; i < scanlineNum; ++i) {
         scanlines[i].leftX = INT_MAX;
         scanlines[i].rightX = INT_MIN;
@@ -160,7 +161,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             // have to do special case for vertical line
             int x = ceil(v2->x) * halfWidth;
             for (int y = bottomY; y <= topY; ++y) {
-                __HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
+                HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
                 scanline->leftX = std::min(scanline->leftX, x);
                 scanline->rightX = std::max(scanline->rightX, x);
                 float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
@@ -178,7 +179,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
                 // line equation
                 int x = ceil(v1->x * halfWidth + (y - v1->y * halfHeight) * gradient);
                 
-                __HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
+                HACK_Scanline<VARY_TYPE> *scanline = &scanlines[y - bottomScanY];
                 scanline->leftX = std::min(scanline->leftX, x);
                 scanline->rightX = std::max(scanline->rightX, x);
                 float lerpVal = (y - v1->y * halfHeight) / (v2->y * halfHeight - v1->y * halfHeight);
@@ -199,7 +200,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
     VARY_TYPE lerpedVarying;
     HACK_pixel pixelOutput;
     for (int i = 0; i < scanlineNum; ++i) {
-        __HACK_Scanline<VARY_TYPE> *scanline = &scanlines[i];
+        HACK_Scanline<VARY_TYPE> *scanline = &scanlines[i];
         
         // clip scanline to ctx space
         // TODO(karl): check against ctx x coords
@@ -214,7 +215,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             int pixelX = j;
             int pixelY = i + bottomScanY;
             
-            NSLog(@"shading pixel {%d, %d, %f}", pixelX, pixelY, pixelZ);
+            //NSLog(@"shading pixel {%d, %d, %f}", pixelX, pixelY, pixelZ);
             fragmentShader(lerpedVarying, uniforms, pixelOutput);
             
             // update depth and color buffers with our rendering context

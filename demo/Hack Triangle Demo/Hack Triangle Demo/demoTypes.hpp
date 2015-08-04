@@ -54,7 +54,7 @@ struct VertexVarying {
 struct Uniform {};
 
 template<>
-void lerp<Vec4>(const Vec4 &v1, const Vec4 &v2, float lerpVal, Vec4 &output)
+inline void lerp<Vec4>(const Vec4 &v1, const Vec4 &v2, float lerpVal, Vec4 &output)
 {
     output.x = (v2.x - v1.x) * lerpVal + v1.x;
     output.y = (v2.y - v1.y) * lerpVal + v1.y;
@@ -63,7 +63,7 @@ void lerp<Vec4>(const Vec4 &v1, const Vec4 &v2, float lerpVal, Vec4 &output)
 }
 
 template<>
-void lerp<VertexVarying>(const VertexVarying &v1, const VertexVarying &v2, float lerpVal, VertexVarying &output)
+inline void lerp<VertexVarying>(const VertexVarying &v1, const VertexVarying &v2, float lerpVal, VertexVarying &output)
 {
     lerp(v1.color, v2.color, lerpVal, output.color);
 }

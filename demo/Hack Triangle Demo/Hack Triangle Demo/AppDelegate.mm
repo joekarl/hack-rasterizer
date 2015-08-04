@@ -11,7 +11,7 @@
 #include "hack.hpp"
 
 
-void vShader(const VertexAttribute &vert, const Uniform &uniforms, HACK_vertex<VertexVarying> &output)
+inline void vShader(const VertexAttribute &vert, const Uniform &uniforms, HACK_vertex<VertexVarying> &output)
 {
     output.x = vert.position.x;
     output.y = vert.position.y;
@@ -19,7 +19,7 @@ void vShader(const VertexAttribute &vert, const Uniform &uniforms, HACK_vertex<V
     output.varying.color = vert.color;
 }
 
-void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_pixel &output)
+inline void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_pixel &output)
 {
     output.r = varying.color.r;
     output.g = varying.color.g;
@@ -38,6 +38,8 @@ void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_pixel &
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
+    
+    NSLog(@"Starting");
     
     VertexAttribute vertices[3];
     vertices[0].position.x = -0.5;
@@ -62,8 +64,17 @@ void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_pixel &
     
     Uniform uniforms;
     
+    // JANKY HACK
+    // we just guess that noone has more than 10000 horizontal pixel lines
+    // TODO(karl): make this die in a fire
+    HACK_Scanline<VertexVarying> scanlines[640];
+    
     HACK_Context ctx = {640, 480};
-    HACK_rasterize_triangles(ctx, vertices, uniforms, 3, &vShader, &fShader);
+    for (int i = 0; i < 10000; ++i) {
+        HACK_rasterize_triangles(ctx, vertices, uniforms, 3, &vShader, &fShader, scanlines);
+    }
+    
+    NSLog(@"Finished");
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
