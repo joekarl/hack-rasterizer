@@ -8,6 +8,8 @@ Flexible software rasterizer
 - actually update raster :D - (easy) - record pixel in raster if z-buffer matches
 - raster color space - (medium) convert float pixel amounts to integer amounts in color space
 - polygon clipping for out of frame polygons - (easy) - just check as we scan convert
+- texturing - (hard) - need texture representation and sampling
+- vector operators - (medium) - basic dot products, normalizations, etc...
 
 ## Optimization points
 
