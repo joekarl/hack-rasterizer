@@ -9,18 +9,7 @@
 #import "AppDelegate.h"
 #include "demoTypes.hpp"
 #include "hack.hpp"
-
-inline void vShader(const VertexAttribute &vert, const Uniform &uniforms, HACK_vertex<VertexVarying> &output)
-{
-    output.position = vert.position;
-    output.varying.color = vert.color;
-}
-
-inline void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_pixel &output)
-{
-    output.color.xyz = varying.color;
-    output.color._a = 1.0;
-}
+#include "shaders.hpp"
 
 @interface AppDelegate ()
 
@@ -31,8 +20,6 @@ inline void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
-    
-    NSLog(@"Starting");
     
     VertexAttribute vertices[3];
     vertices[0].position.x = -0.5;
@@ -62,8 +49,10 @@ inline void fShader(const VertexVarying &varying, const Uniform &uniforms, HACK_
     HACK_Scanline<VertexVarying> scanlines[640];
     
     HACK_Context ctx = {640, 480};
+    
+    NSLog(@"Starting");
     for (int i = 0; i < 1000; ++i) {
-        HACK_rasterize_triangles(ctx, vertices, uniforms, 3, &vShader, &fShader, scanlines);
+        HACK_rasterize_triangles(ctx, vertices, uniforms, 3, scanlines);
     }
     
     NSLog(@"Finished");

@@ -8,33 +8,12 @@
 #include <limits.h>
 #include <math.h>
 
-template <typename VARY_TYPE>
-struct __HACK_Scanline;
-
 /**
  * Our rendering context
  */
 struct HACK_Context
 {
     int width, height;
-};
-
-/**
- * Output of a fragment shader, 
- * contains the color and z depth of our pixel
- */
-struct HACK_pixel {
-    HACK_Vec4 color;
-};
-
-/**
- * Output of a vertex shader
- * contains the vertex position and an associated varying object with our vertex
- */
-template <typename VARY_TYPE>
-struct HACK_vertex {
-    HACK_Vec3 position;
-    VARY_TYPE varying;
 };
 
 /**
@@ -68,14 +47,12 @@ inline void HACK_rasterize_triangles(const HACK_Context &ctx,
                     const ATTR_TYPE *polygonAttributes,
                     const UNIF_TYPE &uniforms,
                     const int vertexCount,
-                    void (*vertexShader) (const ATTR_TYPE &attribute, const UNIF_TYPE &uniform, HACK_vertex<VARY_TYPE> &output),
-                    void (*fragmentShader) (const VARY_TYPE &varying, const UNIF_TYPE &uniform, HACK_pixel &output),
                     HACK_Scanline<VARY_TYPE> *scanlines)
 {
     
     // every three vertexes is a triangle we should rasterize
     for (int v = 0; v < vertexCount;) {
-        __HACK_rasterize_triangle(ctx, v, polygonAttributes, uniforms, vertexShader, fragmentShader, scanlines);
+        __HACK_rasterize_triangle(ctx, v, polygonAttributes, uniforms, scanlines);
         v += 3;
     }
 }
@@ -93,15 +70,13 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
                                     const int triangleId,
                                     const ATTR_TYPE *polygonAttributes,
                                     const UNIF_TYPE &uniforms,
-                                    void (*vertexShader) (const ATTR_TYPE &attribute, const UNIF_TYPE &uniform, HACK_vertex<VARY_TYPE> &output),
-                                    void (*fragmentShader) (const VARY_TYPE &varying, const UNIF_TYPE &uniform, HACK_pixel &output),
                                     HACK_Scanline<VARY_TYPE> *scanlines)
 {
     // allocate 3 outputs, one for each vertex
     HACK_vertex<VARY_TYPE> vertexShaderOutput[3];
-    vertexShader(polygonAttributes[triangleId], uniforms, vertexShaderOutput[0]);
-    vertexShader(polygonAttributes[triangleId + 1], uniforms, vertexShaderOutput[1]);
-    vertexShader(polygonAttributes[triangleId + 2], uniforms, vertexShaderOutput[2]);
+    shadeVertex(polygonAttributes[triangleId], uniforms, vertexShaderOutput[0]);
+    shadeVertex(polygonAttributes[triangleId + 1], uniforms, vertexShaderOutput[1]);
+    shadeVertex(polygonAttributes[triangleId + 2], uniforms, vertexShaderOutput[2]);
     
     int halfHeight = ctx.height / 2;
     int halfWidth = ctx.width / 2;
@@ -203,7 +178,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             int pixelY = i + bottomScanY + halfHeight;
             
             //NSLog(@"shading pixel {%d, %d, %f}", pixelX, pixelY, pixelZ);
-            fragmentShader(lerpedVarying, uniforms, pixelOutput);
+            shadeFragment(lerpedVarying, uniforms, pixelOutput);
             //NSLog(@"color is {%f, %f, %f, %f}", pixelOutput.color.r, pixelOutput.color.g, pixelOutput.color.b, pixelOutput.color.a);
             
             // update depth and color buffers with our rendering context

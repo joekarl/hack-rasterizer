@@ -40,6 +40,36 @@ struct HACK_Vec4 {
 };
 
 /**
+ * Output of a fragment shader,
+ * contains the color and z depth of our pixel
+ */
+struct HACK_pixel {
+    HACK_Vec4 color;
+};
+
+/**
+ * Output of a vertex shader
+ * contains the vertex position and an associated varying object with our vertex
+ */
+template <typename VARY_TYPE>
+struct HACK_vertex {
+    HACK_Vec3 position;
+    VARY_TYPE varying;
+};
+
+/**
+ * vertex shader template function
+ */
+template <typename ATTR_TYPE, typename UNIF_TYPE, typename VARY_TYPE>
+void shadeVertex(const ATTR_TYPE &attribute, const UNIF_TYPE &uniform, HACK_vertex<VARY_TYPE> &output);
+
+/**
+ * fragment shader template function
+ */
+template <typename VARY_TYPE, typename UNIF_TYPE>
+void shadeFragment(const VARY_TYPE &varying, const UNIF_TYPE &uniform, HACK_pixel &output);
+
+/**
  * lerp function template
  * Anything that is used as a VARY_TYPE must have lerp implemented for it
  */
