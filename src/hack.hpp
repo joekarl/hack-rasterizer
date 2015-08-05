@@ -113,7 +113,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
         if (dx == 0) {
             // have to do special case for vertical line
             int x = ceil(v2Position.x) * halfWidth;
-            for (int y = bottomY; y <= topY; ++y) {
+            for (int y = bottomY; y < topY + 1; ++y) {
                 HACK_Scanline<VARY_TYPE> &scanline = scanlines[y - bottomScanY];
                 scanline.leftX = std::min(scanline.leftX, x);
                 scanline.rightX = std::max(scanline.rightX, x);
@@ -128,7 +128,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             // this is slow, should be optimized
             float gradient = dx / dy;
             
-            for (int y = bottomY; y <= topY; ++y) {
+            for (int y = bottomY; y < topY + 1; ++y) {
                 // line equation
                 int x = ceil(v1Position.x * halfWidth + (y - v1Position.y * halfHeight) * gradient);
                 
@@ -158,7 +158,8 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
         // clip scanline to ctx space
         // TODO(karl): check against ctx x coords
         
-        for (int j = scanline.leftX; j <= scanline.rightX; ++j) {
+        //*
+        for (int j = scanline.leftX; j < scanline.rightX + 1; ++j) {
             // lerp the left and right of the scanline into
             float lerpVal = static_cast<float>(j - scanline.leftX) / static_cast<float>(scanline.rightX - scanline.leftX);
             lerp<VARY_TYPE>(scanline.leftVarying, scanline.rightVarying, lerpVal, lerpedVarying);
@@ -174,6 +175,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             // update depth and color buffers with our rendering context
             
         }
+        //*/
     }
 }
 

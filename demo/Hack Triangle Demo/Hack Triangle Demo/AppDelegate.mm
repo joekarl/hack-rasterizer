@@ -21,37 +21,32 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
     
-    VertexAttribute vertices[3];
-    vertices[0].position.x = -0.5;
-    vertices[0].position.y = -0.5;
-    vertices[0].position.z = 0.5;
-    vertices[1].position.x = 0.0;
-    vertices[1].position.y = 0.5;
-    vertices[1].position.z = 0.5;
-    vertices[2].position.x = 0.5;
-    vertices[2].position.y = -0.5;
-    vertices[2].position.z = 0.5;
     
-    vertices[0].color.r = 1.0;
-    vertices[0].color.g = 0.0;
-    vertices[0].color.b = 0.0;
-    vertices[1].color.r = 0.0;
-    vertices[1].color.g = 1.0;
-    vertices[1].color.b = 0.0;
-    vertices[2].color.r = 0.0;
-    vertices[2].color.g = 0.0;
-    vertices[2].color.b = 1.0;
+    NSLog(@"Starting");
+    
+    VertexAttribute vertices[3];
+    vertices[0].position = {-0.5, -0.5, 0.5};
+    vertices[1].position = {0.0, 0.5, 0.5};
+    vertices[2].position = {0.5, -0.5, 0.5};
+    
+    vertices[0].color = {1.0, 0.0, 0.0};
+    vertices[1].color = {0.0, 1.0, 0.0};
+    vertices[2].color = {0.0, 0.0, 1.0};
     
     Uniform uniforms;
     
     HACK_Context ctx = {640, 480};
     
-    NSLog(@"Starting");
+    NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
+    
     for (int i = 0; i < 1000; ++i) {
         HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(ctx, vertices, uniforms, 3);
     }
     
-    NSLog(@"Finished");
+    
+    NSTimeInterval endTime = [[NSDate date] timeIntervalSince1970];
+    
+    NSLog(@"Finished, total time %fms", (endTime - startTime) * 1000);
     exit(0);
 }
 
