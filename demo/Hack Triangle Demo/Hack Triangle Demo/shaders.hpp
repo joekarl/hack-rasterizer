@@ -22,6 +22,7 @@ template<>
 inline void shadeFragment(const VertexVarying &varying, const Uniform &uniforms, HACK_pixel &output)
 {
     output.color.xyz = varying.color;
+    //NSLog(@"var color r: %f g: %f b: %f", varying.color.r, varying.color.g, varying.color.b);
     output.color._a = 1.0;
 }
 

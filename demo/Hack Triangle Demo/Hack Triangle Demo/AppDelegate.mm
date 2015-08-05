@@ -41,16 +41,18 @@
     
     Uniform uniforms;
     
-    HACK_Context ctx = {1920, 1080};
-
-    // sigh appears we have to alloc scanline memory outside of hack
-    // or the compiler optimizes out the memory allocation and explodes :/
+    // static array allocation here with max number of scanlines we could possible create
+    // NOTE: this cannot be ctx.height because the compiler will mess up the dynamic allocation when optimizer is active
     HACK_Scanline<VertexVarying> scanlines[1920];
+    HACK_Context<VertexVarying> ctx;
+    ctx.width = 1920;
+    ctx.height = 1080;
+    ctx.scanlines = scanlines;
     
     NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
     
-    for (int i = 0; i < 100; ++i) {
-        HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(ctx, vertices, uniforms, 6, scanlines);
+    for (int i = 0; i < 1000; ++i) {
+        HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(ctx, vertices, uniforms, 6);
     }
     
     
