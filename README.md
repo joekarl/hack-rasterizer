@@ -13,7 +13,6 @@ Flexible software rasterizer
 
 Big wins:
 - scan converter math (remove divisions and integer math) - (medium) - big thing is getting rid of divisions
-- fragment shader invocation (maybe multithread this?) - (hard) - this is going to be the hardest part to optimize but will have the most win as is called per pixel per triangle, we should be able to multithread via batching inside of a single triangle because each pixel calc is independent
 
 Smaller wins
-- optimized lerping - (medium) - simd + assembly
+- optimized lerping - (medium) - SSE + assembly

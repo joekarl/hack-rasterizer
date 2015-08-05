@@ -175,6 +175,7 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
             // update depth and color buffers with our rendering context
             
         }
+        
         //*/
     }
 }
