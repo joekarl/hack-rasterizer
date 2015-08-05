@@ -32,23 +32,14 @@ struct HACK_Scanline {
  * polygonAttributes - <ATTR_TYPE>[] - this array holds all of the per vertex information for all of our triangles
  * uniforms - <UNIF_TYPE> - this object holds things that are uniform to all vertices in all of our triangles
  * vertexCount - int - the number of vertices, should be the length of polygonAttributes
- * vertexShader - fn(const ATTR_TYPE & attribute, const UNIF_TYPE & uniform, HACK_vertex<VARY_TYPE> & output)
- *              - function that transforms the triangles' vertices and sets up the varying data for further pipeline steps
- *              - your shader function should populate the output parameter
- * fragmentShader - fn(const VARY_TYPE & varying, const UNIF_TYPE & uniform, HACK_pixel & output)
- *                - function that determines the color of a pixel based on varyings and uniforms
- *                - your shader function should populate the output parameter
- * scanlines - an array of scanlines that will be used internally for scan conversion
- *           - should be equal to the height of the raster
- *           - this seems superfluous but there's no memory allocation inside of hack so these must be supplied elsewhere
  */
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
 inline void HACK_rasterize_triangles(const HACK_Context &ctx,
-                    const ATTR_TYPE *polygonAttributes,
-                    const UNIF_TYPE &uniforms,
-                    const int vertexCount,
-                    HACK_Scanline<VARY_TYPE> *scanlines)
+                                     const ATTR_TYPE *polygonAttributes,
+                                     const UNIF_TYPE &uniforms,
+                                     int vertexCount)
 {
+    HACK_Scanline<VARY_TYPE> scanlines[ctx.height];
     
     // every three vertexes is a triangle we should rasterize
     for (int v = 0; v < vertexCount;) {
@@ -62,8 +53,7 @@ inline void HACK_rasterize_triangles(const HACK_Context &ctx,
  * triangleId - int - the ID of the triangle we're rendering, this is used to calc which polygon attributes we will use for our vertexes
  * polygonAttributes - <ATTR_TYPE>[] -
  * uniforms - <UNIF_TYPE> -
- * vertexShader - fn
- * fragmentShader - fn
+ * scanlines - <HACK_Scanline<VARY_TYPE>> - scanlines that we will use to scan convert our triangle into
  */
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
 inline void __HACK_rasterize_triangle(const HACK_Context &ctx,

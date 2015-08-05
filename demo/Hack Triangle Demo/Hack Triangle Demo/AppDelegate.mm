@@ -44,15 +44,11 @@
     
     Uniform uniforms;
     
-    // JANKY HACK
-    // TODO(karl): make this die in a fire
-    HACK_Scanline<VertexVarying> scanlines[640];
-    
     HACK_Context ctx = {640, 480};
     
     NSLog(@"Starting");
     for (int i = 0; i < 1000; ++i) {
-        HACK_rasterize_triangles(ctx, vertices, uniforms, 3, scanlines);
+        HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(ctx, vertices, uniforms, 3);
     }
     
     NSLog(@"Finished");
