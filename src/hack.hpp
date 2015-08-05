@@ -27,6 +27,12 @@ struct HACK_Scanline {
     VARY_TYPE leftVarying, rightVarying;
 };
 
+template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
+inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
+                                      const int triangleId,
+                                      const ATTR_TYPE *polygonAttributes,
+                                      const UNIF_TYPE &uniforms);
+
 /**
  * Rasterize a set of triangles
  * polygonAttributes - <ATTR_TYPE>[] - this array holds all of the per vertex information for all of our triangles
@@ -37,13 +43,12 @@ template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
 inline void HACK_rasterize_triangles(const HACK_Context &ctx,
                                      const ATTR_TYPE *polygonAttributes,
                                      const UNIF_TYPE &uniforms,
-                                     int vertexCount)
+                                     int vertexCount,
+                                     HACK_Scanline<VARY_TYPE> *scanlines)
 {
-    HACK_Scanline<VARY_TYPE> scanlines[ctx.height];
-    
     // every three vertexes is a triangle we should rasterize
     for (int v = 0; v < vertexCount;) {
-        __HACK_rasterize_triangle(ctx, v, polygonAttributes, uniforms, scanlines);
+        __HACK_rasterize_triangle<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, v, polygonAttributes, uniforms, scanlines);
         v += 3;
     }
 }
@@ -79,9 +84,10 @@ inline void __HACK_rasterize_triangle(const HACK_Context &ctx,
     int topScanY = ceil(std::max(std::max(vertexShaderOutput[0].position.y * halfHeight, vertexShaderOutput[1].position.y * halfHeight), vertexShaderOutput[2].position.y * halfHeight));
     int scanlineNum = topScanY - bottomScanY;
     
+    
     for (int i = 0; i < scanlineNum; ++i) {
-        scanlines[i].leftX = INT_MAX;
-        scanlines[i].rightX = INT_MIN;
+        scanlines[i].leftX = 32767;
+        scanlines[i].rightX = -32767;
     }
     
     // populate scanlines with values

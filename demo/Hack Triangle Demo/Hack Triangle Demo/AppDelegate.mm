@@ -24,23 +24,33 @@
     
     NSLog(@"Starting");
     
-    VertexAttribute vertices[3];
-    vertices[0].position = {-0.5, -0.5, 0.5};
-    vertices[1].position = {0.0, 0.5, 0.5};
-    vertices[2].position = {0.5, -0.5, 0.5};
+    VertexAttribute vertices[6];
+    vertices[0].position = {-1, -1, 0.5};
+    vertices[1].position = {1, 1, 0.5};
+    vertices[2].position = {-1, 1, 0.5};
+    vertices[3].position = {-1, -1, 0.5};
+    vertices[4].position = {1, 1, 0.5};
+    vertices[5].position = {1, -1, 0.5};
     
     vertices[0].color = {1.0, 0.0, 0.0};
     vertices[1].color = {0.0, 1.0, 0.0};
     vertices[2].color = {0.0, 0.0, 1.0};
+    vertices[3].color = {1.0, 0.0, 0.0};
+    vertices[4].color = {0.0, 1.0, 0.0};
+    vertices[5].color = {0.0, 0.0, 1.0};
     
     Uniform uniforms;
     
-    HACK_Context ctx = {640, 480};
+    HACK_Context ctx = {1920, 1080};
+
+    // sigh appears we have to alloc scanline memory outside of hack
+    // or the compiler optimizes out the memory allocation and explodes :/
+    HACK_Scanline<VertexVarying> scanlines[1920];
     
     NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
     
-    for (int i = 0; i < 1000; ++i) {
-        HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(ctx, vertices, uniforms, 3);
+    for (int i = 0; i < 100; ++i) {
+        HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(ctx, vertices, uniforms, 6, scanlines);
     }
     
     
