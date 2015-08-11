@@ -37,7 +37,7 @@
         ctx->colorBuffer = (unsigned char *) calloc(ctx->width * ctx->height * 4, sizeof(char));
         
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-        bitmapCtx = CGBitmapContextCreate(ctx->colorBuffer, ctx->width, ctx->height, 8, ctx->width * 4, colorSpace, kCGImageAlphaNoneSkipFirst);
+        bitmapCtx = CGBitmapContextCreate(ctx->colorBuffer, ctx->width, ctx->height, 8, ctx->width * 4, colorSpace, kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Big);
 
         [self initScene];
         
@@ -68,7 +68,7 @@
     
     double endTime = CACurrentMediaTime();
     double totalTime = endTime - startTime;
-    //NSLog(@"FrameTime: %fms", totalTime * 1000);
+    NSLog(@"FrameTime: %fms", totalTime * 1000);
     
     [self setNeedsDisplay:YES];
 }
