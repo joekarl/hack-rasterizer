@@ -5,7 +5,6 @@ Flexible software rasterizer
 - backface culling - (easy) - calc normal of polygon, if negative discard
 - z-buffer - (easy) - record per pixel z in buffer
 - matrix types - (medium) - types and operators
-- actually update raster :D - (easy) - record pixel in raster if z-buffer matches
 - raster color space - (medium) convert float pixel amounts to integer amounts in color space
 - polygon clipping for out of frame polygons - (easy) - just check as we scan convert
 - texturing - (hard) - need texture representation and sampling
