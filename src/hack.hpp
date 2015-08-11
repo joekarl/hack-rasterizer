@@ -19,6 +19,8 @@ struct HACK_Context
 {
     int width, height;
     HACK_Scanline<VARY_TYPE> *scanlines;
+    bool enableBackfaceCulling;
+    unsigned char *colorBuffer;
 };
 
 /**
@@ -82,6 +84,9 @@ inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
     int halfWidth = ctx.width / 2;
     
     // calc polygon normal and short circuit if needed
+    if (ctx.enableBackfaceCulling == true) {
+        
+    }
     
     // calculate number of scanlines needed for triangle
     // TODO(karl): clip to ctx y coords
@@ -96,14 +101,17 @@ inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
     
     // populate scanlines with values
     // this is where actual scanline conversion is done
-    // TODO(karl): actually do it
     for (int i = 0; i < 3; ++i) {
-        HACK_vertex<VARY_TYPE> &v1 = vertexShaderOutput[i];
-        HACK_vertex<VARY_TYPE> &v2 = (i == 2) ? vertexShaderOutput[0] : vertexShaderOutput[i + 1];
+        // this is dumb, I shouldn't be making copies here...
+        HACK_vertex<VARY_TYPE> v1 = vertexShaderOutput[i];
+        HACK_vertex<VARY_TYPE> v2 = (i == 2) ? vertexShaderOutput[0] : vertexShaderOutput[i + 1];
+        
+        bool vertexPlaneIsLeftVertical = false;
         
         if (v1.position.y > v2.position.y) {
             // if our y is decreasing instead of increasing we need to flip ordering
             std::swap(v1, v2);
+            vertexPlaneIsLeftVertical = true;
         }
         
         const HACK_Vec3 &v1Position = v1.position;
@@ -128,10 +136,13 @@ inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
                 scanline.leftX = std::min(scanline.leftX, x);
                 scanline.rightX = std::max(scanline.rightX, x);
                 float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
-                lerp(v1.varying, v2.varying, lerpVal, scanline.leftVarying);
-                lerp(v1.varying, v2.varying, lerpVal, scanline.rightVarying);
-                lerp(v1Position.z, v2Position.z, lerpVal, scanline.leftZ);
-                lerp(v1Position.z, v2Position.z, lerpVal, scanline.rightZ);
+                if (vertexPlaneIsLeftVertical) {
+                    lerp(v1.varying, v2.varying, lerpVal, scanline.leftVarying);
+                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.rightZ);
+                } else {
+                    lerp(v1.varying, v2.varying, lerpVal, scanline.rightVarying);
+                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.leftZ);
+                }
             }
         } else {
         
@@ -178,6 +189,9 @@ inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
             lerp(scanline.leftZ, scanline.rightZ, lerpVal, pixelZ);
             int pixelX = j + halfWidth;
             int pixelY = i + bottomScanY + halfHeight;
+            if (pixelX == ctx.width) {
+                pixelX -= 1;
+            }
             
             //NSLog(@"scanline left: %d right %d", scanline.leftX, scanline.rightX);
             //NSLog(@"lerp val %f", lerpVal);
@@ -186,7 +200,13 @@ inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
             //NSLog(@"color is {%f, %f, %f, %f}", pixelOutput.color.r, pixelOutput.color.g, pixelOutput.color.b, pixelOutput.color.a);
             
             // update depth and color buffers with our rendering context
-            
+            // this is ARGB
+            int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
+            //NSLog(@"pixel base %d j %d scanlineL %d scanlineR %d", pixelBase, j, scanline.leftX, scanline.rightX);
+            ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
+            ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
+            ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
+            ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
         }
         
         //*/

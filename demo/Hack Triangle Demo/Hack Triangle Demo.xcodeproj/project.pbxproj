@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CB393A8B1B79AC2C0030C495 /* DemoView.mm in Sources */ = {isa = PBXBuildFile; fileRef = CB393A8A1B79AC2C0030C495 /* DemoView.mm */; };
 		CBD76BDD1B701D06001EA090 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = CBD76BDC1B701D06001EA090 /* AppDelegate.mm */; };
 		CBD76BE01B701D06001EA090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = CBD76BDF1B701D06001EA090 /* main.m */; };
 		CBD76BE21B701D06001EA090 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CBD76BE11B701D06001EA090 /* Assets.xcassets */; };
@@ -35,6 +36,8 @@
 /* Begin PBXFileReference section */
 		CB3153091B71656A003D2F19 /* hack_types.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = hack_types.hpp; sourceTree = "<group>"; };
 		CB31530B1B71C167003D2F19 /* shaders.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = shaders.hpp; sourceTree = "<group>"; };
+		CB393A8A1B79AC2C0030C495 /* DemoView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = DemoView.mm; sourceTree = "<group>"; };
+		CB393A8C1B79AC400030C495 /* DemoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DemoView.h; sourceTree = "<group>"; };
 		CBD76BD81B701D06001EA090 /* Hack Triangle Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Hack Triangle Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CBD76BDB1B701D06001EA090 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		CBD76BDC1B701D06001EA090 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
@@ -103,6 +106,8 @@
 				CBD76C101B70355B001EA090 /* hack_src */,
 				CBD76BDB1B701D06001EA090 /* AppDelegate.h */,
 				CBD76BDC1B701D06001EA090 /* AppDelegate.mm */,
+				CB393A8C1B79AC400030C495 /* DemoView.h */,
+				CB393A8A1B79AC2C0030C495 /* DemoView.mm */,
 				CBD76C151B7040B3001EA090 /* demoTypes.hpp */,
 				CB31530B1B71C167003D2F19 /* shaders.hpp */,
 				CBD76BE11B701D06001EA090 /* Assets.xcassets */,
@@ -279,6 +284,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CBD76BE01B701D06001EA090 /* main.m in Sources */,
+				CB393A8B1B79AC2C0030C495 /* DemoView.mm in Sources */,
 				CBD76BDD1B701D06001EA090 /* AppDelegate.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
