@@ -7,14 +7,11 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import <OpenGL/OpenGL.h>
+#import <OpenGL/gl.h>
+
 #import "demoTypes.hpp"
 
-@interface DemoView : NSView
-
-@property NSTimer *sceneTimer;
-@property VertexAttribute *vertices;
-@property Uniform *uniform;
-@property HACK_Context<VertexVarying> *ctx;
-@property CGContextRef bitmapCtx;
+@interface DemoView : NSOpenGLView
 
 @end
