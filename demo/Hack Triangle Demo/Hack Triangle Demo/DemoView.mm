@@ -17,6 +17,10 @@
     Uniform *uniform;
     HACK_Context<VertexVarying> *ctx;
     GLuint textureId;
+    double lastFrameTime;
+    int accumulator;
+    int fps;
+    bool useWireframe;
 }
 
 @end
@@ -30,14 +34,13 @@
     return self;
 }
 
-
 - (void)awakeFromNib {
     [super awakeFromNib];
     if (self) {
         [self initScene];
         [self initGl];
         
-        sceneTimer = [NSTimer timerWithTimeInterval:1.0 / 60.0 target:self selector:@selector(updateRenderScene) userInfo:nil repeats:YES];
+        sceneTimer = [NSTimer timerWithTimeInterval:1.0/30.0 target:self selector:@selector(updateRenderScene) userInfo:nil repeats:YES];
         [[NSRunLoop mainRunLoop] addTimer:sceneTimer forMode:NSDefaultRunLoopMode];
         NSLog(@"Finished initing demo view");
     }
@@ -69,8 +72,8 @@
 
 - (void)initScene {
     ctx = (HACK_Context<VertexVarying>*) calloc(1, sizeof(HACK_Context<VertexVarying>));
-    ctx->width = 320;
-    ctx->height = 240;
+    ctx->width = 1024;
+    ctx->height = 1024;
     ctx->scanlines = (HACK_Scanline<VertexVarying>*) calloc(ctx->height, sizeof(HACK_Scanline<VertexVarying>));
     ctx->enableBackfaceCulling = false;
     ctx->colorBuffer = (unsigned char *) calloc(ctx->width * ctx->height * 4, sizeof(char));
@@ -161,20 +164,28 @@
 - (void) updateRenderScene {
     double startTime = CACurrentMediaTime();
     
-    [self updateScene];
+    [self updateScene:(startTime - lastFrameTime)];
     [self renderScene];
     
     double endTime = CACurrentMediaTime();
-    double totalTime = endTime - startTime;
-    //NSLog(@"FrameTime: %fms", totalTime * 1000);
+    lastFrameTime = endTime;
 }
 
 /**
  * Update the color buffer with the contents of our scene
  */
-- (void)updateScene {
+- (void)updateScene:(double)dt {
+    accumulator += dt * 1000;
+    fps++;
+    if (accumulator > 1000) {
+        NSLog(@"FPS: %d", fps);
+        useWireframe = !useWireframe;
+        accumulator = accumulator % 1000;
+        fps = 0;
+    }
     
-    HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(*ctx, vertices, *uniform, 3);
+    HACK_clear_color_buffer(*ctx);
+    HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(*ctx, vertices, *uniform, 3, useWireframe);
     
 }
 

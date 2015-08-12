@@ -34,11 +34,23 @@ struct HACK_Scanline {
     VARY_TYPE leftVarying, rightVarying;
 };
 
+template <typename VARY_TYPE>
+inline void HACK_clear_color_buffer(const HACK_Context<VARY_TYPE> &ctx)
+{
+    memset(ctx.colorBuffer, 0, ctx.width * ctx.height * 4);
+}
+
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
-inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
-                                      const int triangleId,
-                                      const ATTR_TYPE *polygonAttributes,
-                                      const UNIF_TYPE &uniforms);
+inline void __HACK_rasterize_filled_triangle(const HACK_Context<VARY_TYPE> &ctx,
+                                             const int triangleId,
+                                             const ATTR_TYPE *polygonAttributes,
+                                             const UNIF_TYPE &uniforms);
+
+template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
+inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &ctx,
+                                                const int triangleId,
+                                                const ATTR_TYPE *polygonAttributes,
+                                                const UNIF_TYPE &uniforms);
 
 /**
  * Rasterize a set of triangles
@@ -50,24 +62,29 @@ template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
 inline void HACK_rasterize_triangles(const HACK_Context<VARY_TYPE> &ctx,
                                      const ATTR_TYPE *polygonAttributes,
                                      const UNIF_TYPE &uniforms,
-                                     int vertexCount)
+                                     int vertexCount,
+                                     bool fillTriangles)
 {
     // every three vertexes is a triangle we should rasterize
     for (int v = 0; v < vertexCount;) {
-        __HACK_rasterize_triangle<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, v, polygonAttributes, uniforms);
+        if (fillTriangles) {
+            __HACK_rasterize_filled_triangle<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, v, polygonAttributes, uniforms);
+        } else {
+            __HACK_rasterize_wireframe_triangle<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, v, polygonAttributes, uniforms);
+        }
         v += 3;
     }
 }
 
 /**
- * INTERNAL - Rasterize a single triangle
+ * INTERNAL - Rasterize a single filled triangle
  * triangleId - int - the ID of the triangle we're rendering, this is used to calc which polygon attributes we will use for our vertexes
  * polygonAttributes - <ATTR_TYPE>[] -
  * uniforms - <UNIF_TYPE> -
  * scanlines - <HACK_Scanline<VARY_TYPE>> - scanlines that we will use to scan convert our triangle into
  */
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
-inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
+inline void __HACK_rasterize_filled_triangle(const HACK_Context<VARY_TYPE> &ctx,
                                     const int triangleId,
                                     const ATTR_TYPE *polygonAttributes,
                                     const UNIF_TYPE &uniforms)
@@ -175,11 +192,11 @@ inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
     HACK_pixel pixelOutput;
     for (int i = 0; i < scanlineNum; ++i) {
         const HACK_Scanline<VARY_TYPE> &scanline = scanlines[i];
+        int pixelY = i + bottomScanY + halfHeight;
         
         // clip scanline to ctx space
         // TODO(karl): check against ctx x coords
         
-        //*
         for (int j = scanline.leftX; j < scanline.rightX + 1; ++j) {
             // lerp the left and right of the scanline into
             float dx = scanline.rightX - scanline.leftX;
@@ -188,28 +205,144 @@ inline void __HACK_rasterize_triangle(const HACK_Context<VARY_TYPE> &ctx,
             float pixelZ = -1;
             lerp(scanline.leftZ, scanline.rightZ, lerpVal, pixelZ);
             int pixelX = j + halfWidth;
-            int pixelY = i + bottomScanY + halfHeight;
             if (pixelX == ctx.width) {
                 pixelX -= 1;
             }
             
-            //NSLog(@"scanline left: %d right %d", scanline.leftX, scanline.rightX);
-            //NSLog(@"lerp val %f", lerpVal);
-            //NSLog(@"shading pixel {%d, %d, %f}", pixelX, pixelY, pixelZ);
             shadeFragment(lerpedVarying, uniforms, pixelOutput);
-            //NSLog(@"color is {%f, %f, %f, %f}", pixelOutput.color.r, pixelOutput.color.g, pixelOutput.color.b, pixelOutput.color.a);
             
             // update depth and color buffers with our rendering context
             // this is ARGB
             int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
-            //NSLog(@"pixel base %d j %d scanlineL %d scanlineR %d", pixelBase, j, scanline.leftX, scanline.rightX);
             ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
             ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
             ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
             ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
         }
+    }
+}
+
+template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
+inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &ctx,
+                                                const int triangleId,
+                                                const ATTR_TYPE *polygonAttributes,
+                                                const UNIF_TYPE &uniforms)
+{
+    // allocate 3 outputs, one for each vertex
+    HACK_vertex<VARY_TYPE> vertexShaderOutput[3];
+    shadeVertex(polygonAttributes[triangleId], uniforms, vertexShaderOutput[0]);
+    shadeVertex(polygonAttributes[triangleId + 1], uniforms, vertexShaderOutput[1]);
+    shadeVertex(polygonAttributes[triangleId + 2], uniforms, vertexShaderOutput[2]);
+    
+    HACK_Scanline<VARY_TYPE> *scanlines = ctx.scanlines;
+    
+    int halfHeight = ctx.height / 2;
+    int halfWidth = ctx.width / 2;
+    
+    VARY_TYPE lerpedVarying;
+    HACK_pixel pixelOutput;
+    // calculate pixel edges and shade inline
+    for (int i = 0; i < 3; ++i) {
+        // this is dumb, I shouldn't be making copies here...
+        HACK_vertex<VARY_TYPE> v1 = vertexShaderOutput[i];
+        HACK_vertex<VARY_TYPE> v2 = (i == 2) ? vertexShaderOutput[0] : vertexShaderOutput[i + 1];
         
-        //*/
+        bool vertexPlaneIsLeftVertical = false;
+        
+        if (v1.position.y > v2.position.y) {
+            // if our y is decreasing instead of increasing we need to flip ordering
+            std::swap(v1, v2);
+            vertexPlaneIsLeftVertical = true;
+        }
+        
+        const HACK_Vec3 &v1Position = v1.position;
+        const HACK_Vec3 &v2Position = v2.position;
+        
+        float dy = (v2Position.y - v1Position.y) * halfHeight;
+        float dx = (v2Position.x - v1Position.x) * halfWidth;
+        int bottomY = ceil(v1Position.y * halfHeight);
+        int topY = ceil(v2Position.y * halfHeight);
+        
+        if (dy == 0) {
+            // run through all pixels between the 2 vertices in x direction
+            int leftX = ceil(v1Position.x * halfWidth);
+            int rightX = ceil(v2Position.x * halfWidth);
+            int y = ceil(v2Position.y * halfHeight);
+            
+            for (int x = leftX; x < rightX + 1; ++x) {
+                float lerpVal = (x - v1Position.x * halfWidth) / (v2Position.x * halfWidth - v1Position.x * halfWidth);
+                lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
+
+                // shade and set pixel
+                shadeFragment(lerpedVarying, uniforms, pixelOutput);
+                
+                int pixelY = y + halfHeight;
+                int pixelX = x + halfWidth;
+                if (pixelX == ctx.width) {
+                    pixelX -= 1;
+                }
+                
+                // update depth and color buffers with our rendering context
+                // this is ARGB
+                int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
+                ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
+                ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
+                ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
+                ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
+            }
+        } else if (dx == 0) {
+            // run through all pixels between the 2 vertices in y direction
+            int x = ceil(v2Position.x) * halfWidth;
+            for (int y = bottomY; y < topY + 1; ++y) {
+                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
+                lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
+                
+                // shade and set pixel
+                shadeFragment(lerpedVarying, uniforms, pixelOutput);
+                
+                int pixelY = y + halfHeight;
+                int pixelX = x + halfWidth;
+                if (pixelX == ctx.width) {
+                    pixelX -= 1;
+                }
+                
+                // update depth and color buffers with our rendering context
+                // this is ARGB
+                int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
+                ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
+                ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
+                ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
+                ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
+            }
+        } else {
+            // general case
+            
+            // this is slow, should be optimized
+            float gradient = dx / dy;
+            
+            for (int y = bottomY; y < topY + 1; ++y) {
+                // line equation
+                int x = ceil(v1Position.x * halfWidth + (y - v1Position.y * halfHeight) * gradient);
+                
+                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
+                lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
+                shadeFragment(lerpedVarying, uniforms, pixelOutput);
+                
+                int pixelY = y + halfHeight;
+                int pixelX = x + halfWidth;
+                if (pixelX == ctx.width) {
+                    pixelX -= 1;
+                }
+                
+                // update depth and color buffers with our rendering context
+                // this is ARGB
+                int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
+                ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
+                ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
+                ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
+                ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
+            }
+        }
     }
 }
 
