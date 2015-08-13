@@ -9,6 +9,32 @@
 #ifndef hack_types_h
 #define hack_types_h
 
+template <typename VARY_TYPE>
+struct HACK_Scanline;
+
+/**
+ * Our rendering context
+ */
+template <typename VARY_TYPE>
+struct HACK_Context
+{
+    int width, height;
+    HACK_Scanline<VARY_TYPE> *scanlines;
+    bool enableBackfaceCulling;
+    unsigned char *colorBuffer;
+};
+
+/**
+ * Scanline representation
+ * Holds left/right positions and associated varying objects
+ */
+template <typename VARY_TYPE>
+struct HACK_Scanline {
+    int leftX, rightX;
+    float leftZ, rightZ;
+    VARY_TYPE leftVarying, rightVarying;
+};
+
 struct HACK_Vec3 {
     union{
         struct {
