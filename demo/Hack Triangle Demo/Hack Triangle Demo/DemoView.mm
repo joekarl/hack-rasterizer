@@ -88,13 +88,13 @@
     ctx->height = 768;
     ctx->scanlines = (HACK_Scanline<VertexVarying>*) calloc(ctx->height, sizeof(HACK_Scanline<VertexVarying>));
     ctx->enableBackfaceCulling = false;
-    ctx->colorBuffer = (unsigned char *) calloc(ctx->width * ctx->height * 4, sizeof(char));
+    ctx->colorBuffer = (unsigned char *) calloc(ctx->width * ctx->height * 4, sizeof(unsigned char));
 
     
     vertices = (VertexAttribute*) calloc(3, sizeof(VertexAttribute));
-    vertices[0].position = {-0.5, -0.5, 0.5};
+    vertices[0].position = {-1.5, -0.5, 0.5};
     vertices[1].position = {0.5, -0.5, 0.5};
-    vertices[2].position = {0, 0.5, 0.5};
+    vertices[2].position = {0, 1.5, 0.5};
     
     vertices[0].color = {1.0, 0.0, 0.0};
     vertices[1].color = {0.0, 0.0, 1.0};

@@ -194,20 +194,26 @@ inline void __HACK_rasterize_filled_triangle(const HACK_Context<VARY_TYPE> &ctx,
         const HACK_Scanline<VARY_TYPE> &scanline = scanlines[i];
         int pixelY = i + bottomScanY + halfHeight;
         
+        if (pixelY >= ctx.height || pixelY < 0) {
+            continue;
+        }
+        
         // clip scanline to ctx space
         // TODO(karl): check against ctx x coords
         
         for (int j = scanline.leftX; j < scanline.rightX + 1; ++j) {
+            int pixelX = j + halfWidth;
+            if (pixelX >= ctx.width || pixelX < 0) {
+                continue;
+            }
+            
             // lerp the left and right of the scanline into
             float dx = scanline.rightX - scanline.leftX;
             float lerpVal = (dx != 0) ? static_cast<float>(j - scanline.leftX) / static_cast<float>(scanline.rightX - scanline.leftX) : 0;
             lerp<VARY_TYPE>(scanline.leftVarying, scanline.rightVarying, lerpVal, lerpedVarying);
             float pixelZ = -1;
             lerp(scanline.leftZ, scanline.rightZ, lerpVal, pixelZ);
-            int pixelX = j + halfWidth;
-            if (pixelX == ctx.width) {
-                pixelX -= 1;
-            }
+            
             
             shadeFragment(lerpedVarying, uniforms, pixelOutput);
             
@@ -234,8 +240,6 @@ inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &c
     shadeVertex(polygonAttributes[triangleId + 1], uniforms, vertexShaderOutput[1]);
     shadeVertex(polygonAttributes[triangleId + 2], uniforms, vertexShaderOutput[2]);
     
-    HACK_Scanline<VARY_TYPE> *scanlines = ctx.scanlines;
-    
     int halfHeight = ctx.height / 2;
     int halfWidth = ctx.width / 2;
     
@@ -260,6 +264,7 @@ inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &c
         
         float dy = (v2Position.y - v1Position.y) * halfHeight;
         float dx = (v2Position.x - v1Position.x) * halfWidth;
+        
         int bottomY = ceil(v1Position.y * halfHeight);
         int topY = ceil(v2Position.y * halfHeight);
         
@@ -268,51 +273,58 @@ inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &c
             int leftX = ceil(v1Position.x * halfWidth);
             int rightX = ceil(v2Position.x * halfWidth);
             int y = ceil(v2Position.y * halfHeight);
+            int pixelY = y + halfHeight;
             
-            for (int x = leftX; x < rightX + 1; ++x) {
-                float lerpVal = (x - v1Position.x * halfWidth) / (v2Position.x * halfWidth - v1Position.x * halfWidth);
-                lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
+            if (pixelY < ctx.height || pixelY >= 0) {
+                for (int x = leftX; x < rightX + 1; ++x) {
+                    
+                    int pixelX = x + halfWidth;
+                    if (pixelX > ctx.width || pixelX < 0) {
+                        continue;
+                    }
+                    
+                    float lerpVal = (x - v1Position.x * halfWidth) / (v2Position.x * halfWidth - v1Position.x * halfWidth);
+                    lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
 
-                // shade and set pixel
-                shadeFragment(lerpedVarying, uniforms, pixelOutput);
-                
-                int pixelY = y + halfHeight;
-                int pixelX = x + halfWidth;
-                if (pixelX == ctx.width) {
-                    pixelX -= 1;
+                    // shade and set pixel
+                    shadeFragment(lerpedVarying, uniforms, pixelOutput);
+                    
+                    // update depth and color buffers with our rendering context
+                    // this is ARGB
+                    int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
+                    ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
+                    ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
+                    ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
+                    ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
                 }
-                
-                // update depth and color buffers with our rendering context
-                // this is ARGB
-                int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
-                ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
-                ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
-                ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
-                ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
             }
         } else if (dx == 0) {
             // run through all pixels between the 2 vertices in y direction
             int x = ceil(v2Position.x) * halfWidth;
-            for (int y = bottomY; y < topY + 1; ++y) {
-                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
-                lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
-                
-                // shade and set pixel
-                shadeFragment(lerpedVarying, uniforms, pixelOutput);
-                
-                int pixelY = y + halfHeight;
-                int pixelX = x + halfWidth;
-                if (pixelX == ctx.width) {
-                    pixelX -= 1;
+            int pixelX = x + halfWidth;
+            
+            if (pixelX < ctx.width || pixelX >= 0) {
+                for (int y = bottomY; y < topY + 1; ++y) {
+                    
+                    int pixelY = y + halfHeight;
+                    if (pixelY > ctx.height || pixelY < 0) {
+                        continue;
+                    }
+                    
+                    float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
+                    lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
+                    
+                    // shade and set pixel
+                    shadeFragment(lerpedVarying, uniforms, pixelOutput);
+                    
+                    // update depth and color buffers with our rendering context
+                    // this is ARGB
+                    int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
+                    ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
+                    ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
+                    ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
+                    ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
                 }
-                
-                // update depth and color buffers with our rendering context
-                // this is ARGB
-                int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
-                ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
-                ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
-                ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
-                ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
             }
         } else {
             // general case
@@ -324,15 +336,18 @@ inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &c
                 // line equation
                 int x = ceil(v1Position.x * halfWidth + (y - v1Position.y * halfHeight) * gradient);
                 
+                int pixelY = y + halfHeight;
+                int pixelX = x + halfWidth;
+                if (pixelX >= ctx.width || pixelX < 0) {
+                    continue;
+                }
+                if (pixelY >= ctx.height || pixelY < 0) {
+                    continue;
+                }
+                
                 float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
                 lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
                 shadeFragment(lerpedVarying, uniforms, pixelOutput);
-                
-                int pixelY = y + halfHeight;
-                int pixelX = x + halfWidth;
-                if (pixelX == ctx.width) {
-                    pixelX -= 1;
-                }
                 
                 // update depth and color buffers with our rendering context
                 // this is ARGB
