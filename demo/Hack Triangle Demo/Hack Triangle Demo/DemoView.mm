@@ -92,15 +92,16 @@
 
     
     vertices = (VertexAttribute*) calloc(3, sizeof(VertexAttribute));
-    vertices[0].position = {-1.5, -0.5, 0.5};
+    vertices[0].position = {-0.5, -0.5, 0.5};
     vertices[1].position = {0.5, -0.5, 0.5};
-    vertices[2].position = {0, 1.5, 0.5};
+    vertices[2].position = {0, 0.5, 0.5};
     
     vertices[0].color = {1.0, 0.0, 0.0};
     vertices[1].color = {0.0, 0.0, 1.0};
     vertices[2].color = {0.0, 1.0, 0.0};
     
     uniform = (Uniform*) calloc(1, sizeof(Uniform));
+    uniform->translateVec = {0, 0, 0};
 }
 
 -(void)prepareOpenGL
@@ -206,13 +207,21 @@ CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp *no
     fps++;
     if (accumulator > 500) {
         NSLog(@"FPS: %d", fps * 2);
-        useWireframe = !useWireframe;
+        //useWireframe = !useWireframe;
         accumulator = 0;
         fps = 0;
     }
     
+    static double angleAccum = 0;
+    angleAccum += dt / 10.0;
+    
+    double angle = angleAccum * 3.1459 / 180.0;
+    
+    uniform->translateVec.x = sin(angle);
+    uniform->zAxisRotation = (float) angle;
+    
     HACK_clear_color_buffer(*ctx);
-    HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(*ctx, vertices, *uniform, 3, useWireframe);
+    HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(*ctx, vertices, *uniform, 3, true);
     
 }
 
