@@ -18,14 +18,17 @@
     HACK_Context<VertexVarying> *ctx;
     GLuint textureId;
     double lastFrameTime;
-    int accumulator;
+    double accumulator;
     int fps;
     bool useWireframe;
+    CVDisplayLinkRef displayLink;
 }
 
 @end
 
 @implementation DemoView
+
+@synthesize msPerFrame;
 
 -(id)initWithCoder:(NSCoder *)coder
 {
@@ -40,8 +43,17 @@
         [self initScene];
         [self initGl];
         
-        sceneTimer = [NSTimer timerWithTimeInterval:1.0/30.0 target:self selector:@selector(updateRenderScene) userInfo:nil repeats:YES];
-        [[NSRunLoop mainRunLoop] addTimer:sceneTimer forMode:NSDefaultRunLoopMode];
+        accumulator = 0;
+        
+        CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+        CVDisplayLinkSetOutputCallback(displayLink, displayLinkCallback, (__bridge void *)(self));
+        CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, [[self openGLContext] CGLContextObj], [[self pixelFormat] CGLPixelFormatObj]);
+        CVDisplayLinkStart(displayLink);
+        
+        // TODO: Record this as update delta
+        CVTime cvtime = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLink);
+        msPerFrame = (double)cvtime.timeValue / (double)cvtime.timeScale * 1000;
+        NSLog(@"Targeting %0.0f fps", ceil(1.0 / (msPerFrame / 1000.0)));
         NSLog(@"Finished initing demo view");
     }
 }
@@ -73,7 +85,7 @@
 - (void)initScene {
     ctx = (HACK_Context<VertexVarying>*) calloc(1, sizeof(HACK_Context<VertexVarying>));
     ctx->width = 1024;
-    ctx->height = 1024;
+    ctx->height = 768;
     ctx->scanlines = (HACK_Scanline<VertexVarying>*) calloc(ctx->height, sizeof(HACK_Scanline<VertexVarying>));
     ctx->enableBackfaceCulling = false;
     ctx->colorBuffer = (unsigned char *) calloc(ctx->width * ctx->height * 4, sizeof(char));
@@ -161,26 +173,41 @@
     [self renderScene];
 }
 
-- (void) updateRenderScene {
-    double startTime = CACurrentMediaTime();
+CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp *now,
+                             const CVTimeStamp *outputTime, CVOptionFlags flagsIn,
+                             CVOptionFlags *flagsOut, void *displayLinkContext)
+{
+    DemoView *demoView = (__bridge DemoView*)displayLinkContext;
     
-    [self updateScene:(startTime - lastFrameTime)];
+    static CVTimeStamp lastRenderTime;
+    uint64_t frameTime = now->hostTime - lastRenderTime.hostTime;
+    lastRenderTime = *now;
+    
+    double frameTimeMs = (double)frameTime / (double)(1000 * 1000);
+    
+    // wrap our call to objc in an autorelease pool because the cvdisplaylink thread doesn't
+    // have an autorelease pool by default
+    @autoreleasepool {
+        [demoView updateRenderScene:frameTimeMs];
+    }
+    return kCVReturnSuccess;
+}
+
+- (void)updateRenderScene:(double)dt {
+    [self updateScene:dt];
     [self renderScene];
-    
-    double endTime = CACurrentMediaTime();
-    lastFrameTime = endTime;
 }
 
 /**
  * Update the color buffer with the contents of our scene
  */
 - (void)updateScene:(double)dt {
-    accumulator += dt * 1000;
+    accumulator += dt;
     fps++;
-    if (accumulator > 1000) {
-        NSLog(@"FPS: %d", fps);
+    if (accumulator > 500) {
+        NSLog(@"FPS: %d", fps * 2);
         useWireframe = !useWireframe;
-        accumulator = accumulator % 1000;
+        accumulator = 0;
         fps = 0;
     }
     

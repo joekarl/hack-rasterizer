@@ -14,4 +14,6 @@
 
 @interface DemoView : NSOpenGLView
 
+@property double msPerFrame;
+
 @end
