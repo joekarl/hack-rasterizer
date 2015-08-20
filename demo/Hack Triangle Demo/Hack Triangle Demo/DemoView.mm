@@ -84,8 +84,8 @@
 
 - (void)initScene {
     ctx = (HACK_Context<VertexVarying>*) calloc(1, sizeof(HACK_Context<VertexVarying>));
-    ctx->width = 1024;
-    ctx->height = 768;
+    ctx->width = 320;
+    ctx->height = 240;
     ctx->scanlines = (HACK_Scanline<VertexVarying>*) calloc(ctx->height, sizeof(HACK_Scanline<VertexVarying>));
     ctx->enableBackfaceCulling = false;
     ctx->colorBuffer = (unsigned char *) calloc(ctx->width * ctx->height * 4, sizeof(unsigned char));
@@ -186,6 +186,10 @@ CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp *no
     
     double frameTimeMs = (double)frameTime / (double)(1000 * 1000);
     
+    if (frameTimeMs > 32) {
+        frameTimeMs = 32;
+    }
+    
     // wrap our call to objc in an autorelease pool because the cvdisplaylink thread doesn't
     // have an autorelease pool by default
     @autoreleasepool {
@@ -212,15 +216,15 @@ CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp *no
         fps = 0;
     }
     
+    HACK_clear_color_buffer(*ctx);
+    
     static double angleAccum = 0;
     angleAccum += dt / 10.0;
     
     double angle = angleAccum * 3.1459 / 180.0;
-    
     uniform->translateVec.x = sin(angle);
     uniform->zAxisRotation = (float) angle;
     
-    HACK_clear_color_buffer(*ctx);
     HACK_rasterize_triangles<VertexAttribute, VertexVarying, Uniform>(*ctx, vertices, *uniform, 3, true);
     
 }

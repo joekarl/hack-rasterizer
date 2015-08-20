@@ -5,8 +5,16 @@
 
 #include <algorithm>
 #include <alloca.h>
+#include <cstdlib>
 #include <limits.h>
-#include <math.h>
+
+inline int _HACK_fast_ceil(float f) {
+    return static_cast<int>(f + 0.5);
+}
+
+inline int _HACK_fast_floor(float f) {
+    return static_cast<int>(f - 0.5);
+}
 
 template <typename VARY_TYPE>
 inline void HACK_clear_color_buffer(const HACK_Context<VARY_TYPE> &ctx)
@@ -15,16 +23,16 @@ inline void HACK_clear_color_buffer(const HACK_Context<VARY_TYPE> &ctx)
 }
 
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
-inline void __HACK_rasterize_filled_triangle(const HACK_Context<VARY_TYPE> &ctx,
-                                             const int triangleId,
-                                             const ATTR_TYPE *polygonAttributes,
-                                             const UNIF_TYPE &uniforms);
+inline void __HACK_rasterize_filled_polygon(const HACK_Context<VARY_TYPE> &ctx,
+                                            const HACK_vertex<VARY_TYPE> *vertices,
+                                            const int vertexCount,
+                                            const UNIF_TYPE &uniforms);
 
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
-inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &ctx,
-                                                const int triangleId,
-                                                const ATTR_TYPE *polygonAttributes,
-                                                const UNIF_TYPE &uniforms);
+inline void __HACK_rasterize_wireframe_polygon(const HACK_Context<VARY_TYPE> &ctx,
+                                               const HACK_vertex<VARY_TYPE> *vertices,
+                                               const int vertexCount,
+                                               const UNIF_TYPE &uniforms);
 
 /**
  * Rasterize a set of triangles
@@ -41,14 +49,29 @@ inline void HACK_rasterize_triangles(const HACK_Context<VARY_TYPE> &ctx,
 {
     // every three vertexes is a triangle we should rasterize
     for (int v = 0; v < vertexCount;) {
+        
+        // take 3 vertices, vertex shade them, clip against screen and zNear/zFar
+        // allocate 3 outputs, one for each vertex
+        static HACK_vertex<VARY_TYPE> vertexShaderOutput[7];
+        shadeVertex(polygonAttributes[v], uniforms, vertexShaderOutput[0]);
+        shadeVertex(polygonAttributes[v + 1], uniforms, vertexShaderOutput[1]);
+        shadeVertex(polygonAttributes[v + 2], uniforms, vertexShaderOutput[2]);
+        
+        // do clipping
+        
+        // take resulting polygon and scan convert + pixel shade
+        
         if (fillTriangles) {
-            __HACK_rasterize_filled_triangle<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, v, polygonAttributes, uniforms);
+            __HACK_rasterize_filled_polygon<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, vertexShaderOutput, 3, uniforms);
         } else {
-            __HACK_rasterize_wireframe_triangle<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, v, polygonAttributes, uniforms);
+            __HACK_rasterize_wireframe_polygon<ATTR_TYPE, VARY_TYPE, UNIF_TYPE>(ctx, vertexShaderOutput, 3, uniforms);
         }
         v += 3;
     }
 }
+
+template<typename VARY_TYPE>
+inline void debugPrint(const VARY_TYPE &vary);
 
 /**
  * INTERNAL - Rasterize a single filled triangle
@@ -58,115 +81,139 @@ inline void HACK_rasterize_triangles(const HACK_Context<VARY_TYPE> &ctx,
  * scanlines - <HACK_Scanline<VARY_TYPE>> - scanlines that we will use to scan convert our triangle into
  */
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
-inline void __HACK_rasterize_filled_triangle(const HACK_Context<VARY_TYPE> &ctx,
-                                    const int triangleId,
-                                    const ATTR_TYPE *polygonAttributes,
-                                    const UNIF_TYPE &uniforms)
+inline void __HACK_rasterize_filled_polygon(const HACK_Context<VARY_TYPE> &ctx,
+                                            const HACK_vertex<VARY_TYPE> *vertices,
+                                            const int vertexCount,
+                                            const UNIF_TYPE &uniforms)
 {
-    // allocate 3 outputs, one for each vertex
-    HACK_vertex<VARY_TYPE> vertexShaderOutput[3];
-    shadeVertex(polygonAttributes[triangleId], uniforms, vertexShaderOutput[0]);
-    shadeVertex(polygonAttributes[triangleId + 1], uniforms, vertexShaderOutput[1]);
-    shadeVertex(polygonAttributes[triangleId + 2], uniforms, vertexShaderOutput[2]);
-    
     HACK_Scanline<VARY_TYPE> *scanlines = ctx.scanlines;
     
     int halfHeight = ctx.height / 2;
     int halfWidth = ctx.width / 2;
     
+    HACK_Vec3 edge1 = {
+        vertices[1].position.x - vertices[0].position.x,
+        vertices[1].position.y - vertices[0].position.y,
+        vertices[1].position.z - vertices[0].position.z
+    };
+    HACK_Vec3 edge2 = {
+        vertices[2].position.x - vertices[1].position.x,
+        vertices[2].position.y - vertices[1].position.y,
+        vertices[2].position.z - vertices[1].position.z
+    };
+    HACK_Vec3 surfaceNormal = _HACK_Cross_Product(edge1, edge2);
+    HACK_Vec3 cameraDirection = {0, 0, 1};
+    
+    float angleToTriangleNormal = _HACK_Dot_Product(surfaceNormal, cameraDirection);
+    
+    bool isBackFacing = angleToTriangleNormal < 0;
+    
     // calc polygon normal and short circuit if needed
-    if (ctx.enableBackfaceCulling == true) {
-        
+    if (ctx.enableBackfaceCulling && isBackFacing) {
+        return;
     }
     
     // calculate number of scanlines needed for triangle
-    // TODO(karl): clip to ctx y coords
-    int bottomScanY = ceil(std::min(std::min(vertexShaderOutput[0].position.y * halfHeight, vertexShaderOutput[1].position.y * halfHeight), vertexShaderOutput[2].position.y * halfHeight));
-    int topScanY = ceil(std::max(std::max(vertexShaderOutput[0].position.y * halfHeight, vertexShaderOutput[1].position.y * halfHeight), vertexShaderOutput[2].position.y * halfHeight));
-    int scanlineNum = topScanY - bottomScanY;
+    int bottomScanY = _HACK_fast_ceil(std::max(0.0f,
+                                               std::min(std::min(vertices[0].position.y * halfHeight + halfHeight,
+                                                                 vertices[1].position.y * halfHeight + halfHeight),
+                                                        vertices[2].position.y * halfHeight + halfHeight)));
+    int topScanY = _HACK_fast_ceil(std::min(static_cast<float>(ctx.height),
+                                            std::max(std::max(vertices[0].position.y * halfHeight + halfHeight,
+                                                              vertices[1].position.y * halfHeight + halfHeight),
+                                                     vertices[2].position.y * halfHeight + halfHeight)));
     
-    for (int i = 0; i < scanlineNum; ++i) {
+    for (int i = bottomScanY; i != topScanY + 1; ++i) {
         scanlines[i].leftX = INT_MAX;
         scanlines[i].rightX = INT_MIN;
     }
     
     // populate scanlines with values
     // this is where actual scanline conversion is done
-    for (int i = 0; i < 3; ++i) {
-        // this is dumb, I shouldn't be making copies here...
-        HACK_vertex<VARY_TYPE> v1 = vertexShaderOutput[i];
-        HACK_vertex<VARY_TYPE> v2 = (i == 2) ? vertexShaderOutput[0] : vertexShaderOutput[i + 1];
+    for (int i = 0; i < vertexCount; ++i) {
+        const HACK_vertex<VARY_TYPE> &v1 = vertices[i];
+        const HACK_vertex<VARY_TYPE> &v2 = (i == vertexCount - 1) ? vertices[0] : vertices[i + 1];
         
-        bool vertexPlaneIsLeftVertical = false;
+        int v1x = _HACK_fast_ceil(v1.position.x * halfWidth);
+        int v2x = _HACK_fast_ceil(v2.position.x * halfWidth);
+        int v1y = _HACK_fast_ceil(v1.position.y * halfHeight);
+        int v2y = _HACK_fast_ceil(v2.position.y * halfHeight);
         
-        if (v1.position.y > v2.position.y) {
-            // if our y is decreasing instead of increasing we need to flip ordering
-            std::swap(v1, v2);
-            vertexPlaneIsLeftVertical = true;
-        }
-        
-        const HACK_Vec3 &v1Position = v1.position;
-        const HACK_Vec3 &v2Position = v2.position;
-        
-        float dy = (v2Position.y - v1Position.y) * halfHeight;
-        float dx = (v2Position.x - v1Position.x) * halfWidth;
-        int bottomY = ceil(v1Position.y * halfHeight);
-        int topY = ceil(v2Position.y * halfHeight);
+        int dx = std::abs(v2x - v1x);
+        int dy = std::abs(v2y - v1y);
         
         if (dy == 0) {
-            // we skip horizontal lines because they'll be filled by diagonals later
-            // also horizontal lines will fill things with NaNs because of division by zero...
+            // horizontal special case
             continue;
-        }
-        
-        if (dx == 0) {
-            // have to do special case for vertical line
-            int x = ceil(v2Position.x) * halfWidth;
-            for (int y = bottomY; y < topY + 1; ++y) {
-                HACK_Scanline<VARY_TYPE> &scanline = scanlines[y - bottomScanY];
-                scanline.leftX = std::min(scanline.leftX, x);
-                scanline.rightX = std::max(scanline.rightX, x);
-                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
-                if (vertexPlaneIsLeftVertical) {
-                    lerp(v1.varying, v2.varying, lerpVal, scanline.leftVarying);
-                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.rightZ);
-                } else {
+        } else if (dx == 0) {
+            // vertical special case
+            int sy = v1y < v2y ? 1 : -1;
+            for (int currY = v1y; currY != v2y + sy; currY += sy) {
+                HACK_Scanline<VARY_TYPE> &scanline = scanlines[currY + halfHeight];
+                scanline.leftX = std::min(scanline.leftX, v2x);
+                scanline.rightX = std::max(scanline.rightX, v2x);
+                float lerpVal = static_cast<float>(currY - v1y) / static_cast<float>(v2y - v1y);
+                
+                if ((sy > 0 && !isBackFacing) || (sy < 0 && isBackFacing)) {
                     lerp(v1.varying, v2.varying, lerpVal, scanline.rightVarying);
-                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.leftZ);
+                    lerp(v1.position.z, v2.position.z, lerpVal, scanline.rightZ);
+                } else {
+                    lerp(v1.varying, v2.varying, lerpVal, scanline.leftVarying);
+                    lerp(v1.position.z, v2.position.z, lerpVal, scanline.leftZ);
                 }
             }
         } else {
-        
-            // this is slow, should be optimized
-            float gradient = dx / dy;
+            // general case
             
-            for (int y = bottomY; y < topY + 1; ++y) {
-                // line equation
-                int x = ceil(v1Position.x * halfWidth + (y - v1Position.y * halfHeight) * gradient);
+            int currX = v1x;
+            int currY = v1y;
+            
+            int sx = v1x < v2x ? 1 : -1;
+            int sy = v1y < v2y ? 1 : -1;
+            
+            int err = (dx > dy ? dx : -dy) / 2;
+            int err2;
+            
+            for (;;) {
+                HACK_Scanline<VARY_TYPE> &scanline = scanlines[currY + halfHeight];
+                scanline.leftX = std::min(scanline.leftX, currX);
+                scanline.rightX = std::max(scanline.rightX, currX);
+                float lerpVal = (dx > dy) ? static_cast<float>(currX - v1x) / static_cast<float>(v2x - v1x)
+                                          : static_cast<float>(currY - v1y) / static_cast<float>(v2y - v1y);
                 
-                HACK_Scanline<VARY_TYPE> &scanline = scanlines[y - bottomScanY];
-                scanline.leftX = std::min(scanline.leftX, x);
-                scanline.rightX = std::max(scanline.rightX, x);
-                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
-                if (x == scanline.leftX) {
+                if (currX == scanline.leftX) {
                     lerp(v1.varying, v2.varying, lerpVal, scanline.leftVarying);
-                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.leftZ);
+                    lerp(v1.position.z, v2.position.z, lerpVal, scanline.leftZ);
                 }
-                if (x == scanline.  rightX) {
+                
+                if (currX == scanline.rightX) {
                     lerp(v1.varying, v2.varying, lerpVal, scanline.rightVarying);
-                    lerp(v1Position.z, v2Position.z, lerpVal, scanline.rightZ);
+                    lerp(v1.position.z, v2.position.z, lerpVal, scanline.rightZ);
+                }
+                
+                if (currX == v2x && currY == v2y) break;
+                
+                err2 = err;
+                
+                if (err2 > -dx) {
+                    err -= dy;
+                    currX += sx;
+                }
+                if (err2 < dy) {
+                    err += dx;
+                    currY += sy;
                 }
             }
         }
     }
-    
 
     // we have all of our scanlines setup, now just loop through shading each pixel in the scanline
+    //*
     VARY_TYPE lerpedVarying;
     HACK_pixel pixelOutput;
-    for (int i = 0; i < scanlineNum; ++i) {
+    for (int i = bottomScanY; i != topScanY + 1; ++i) {
         const HACK_Scanline<VARY_TYPE> &scanline = scanlines[i];
-        int pixelY = i + bottomScanY + halfHeight;
+        int pixelY = i;
         
         if (pixelY >= ctx.height || pixelY < 0) {
             continue;
@@ -194,25 +241,26 @@ inline void __HACK_rasterize_filled_triangle(const HACK_Context<VARY_TYPE> &ctx,
             // update depth and color buffers with our rendering context
             // this is ARGB
             int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
-            ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
-            ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
-            ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
-            ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
+            
+            int r = _HACK_fast_floor(pixelOutput.color.r * 255);
+            int g = _HACK_fast_floor(pixelOutput.color.g * 255);
+            int b = _HACK_fast_floor(pixelOutput.color.b * 255);
+            
+            ctx.colorBuffer[pixelBase] = _HACK_fast_floor(pixelOutput.color.a * 255);
+            ctx.colorBuffer[pixelBase + 1] = r;
+            ctx.colorBuffer[pixelBase + 2] = g;
+            ctx.colorBuffer[pixelBase + 3] = b;
         }
     }
+    //*/
 }
 
 template <typename ATTR_TYPE, typename VARY_TYPE, typename UNIF_TYPE>
-inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &ctx,
-                                                const int triangleId,
-                                                const ATTR_TYPE *polygonAttributes,
-                                                const UNIF_TYPE &uniforms)
+inline void __HACK_rasterize_wireframe_polygon(const HACK_Context<VARY_TYPE> &ctx,
+                                               const HACK_vertex<VARY_TYPE> *vertices,
+                                               const int vertexCount,
+                                               const UNIF_TYPE &uniforms)
 {
-    // allocate 3 outputs, one for each vertex
-    HACK_vertex<VARY_TYPE> vertexShaderOutput[3];
-    shadeVertex(polygonAttributes[triangleId], uniforms, vertexShaderOutput[0]);
-    shadeVertex(polygonAttributes[triangleId + 1], uniforms, vertexShaderOutput[1]);
-    shadeVertex(polygonAttributes[triangleId + 2], uniforms, vertexShaderOutput[2]);
     
     int halfHeight = ctx.height / 2;
     int halfWidth = ctx.width / 2;
@@ -220,72 +268,55 @@ inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &c
     VARY_TYPE lerpedVarying;
     HACK_pixel pixelOutput;
     // calculate pixel edges and shade inline
-    for (int i = 0; i < 3; ++i) {
-        // this is dumb, I shouldn't be making copies here...
-        HACK_vertex<VARY_TYPE> v1 = vertexShaderOutput[i];
-        HACK_vertex<VARY_TYPE> v2 = (i == 2) ? vertexShaderOutput[0] : vertexShaderOutput[i + 1];
+    for (int i = 0; i < vertexCount; ++i) {
+        const HACK_vertex<VARY_TYPE> &v1 = vertices[i];
+        const HACK_vertex<VARY_TYPE> &v2 = (i == vertexCount - 1) ? vertices[0] : vertices[i + 1];
         
-        bool vertexPlaneIsLeftVertical = false;
+        int v1x = _HACK_fast_ceil(v1.position.x * halfWidth);
+        int v2x = _HACK_fast_ceil(v2.position.x * halfWidth);
+        int v1y = _HACK_fast_ceil(v1.position.y * halfHeight);
+        int v2y = _HACK_fast_ceil(v2.position.y * halfHeight);
         
-        if (v1.position.y > v2.position.y) {
-            // if our y is decreasing instead of increasing we need to flip ordering
-            std::swap(v1, v2);
-            vertexPlaneIsLeftVertical = true;
-        }
+        int dx = std::abs(v2x - v1x);
+        int dy = std::abs(v2y - v1y);
         
-        const HACK_Vec3 &v1Position = v1.position;
-        const HACK_Vec3 &v2Position = v2.position;
-        
-        float dy = (v2Position.y - v1Position.y) * halfHeight;
-        float dx = (v2Position.x - v1Position.x) * halfWidth;
-        
-        int bottomY = ceil(v1Position.y * halfHeight);
-        int topY = ceil(v2Position.y * halfHeight);
         
         if (dy == 0) {
-            // run through all pixels between the 2 vertices in x direction
-            int leftX = ceil(v1Position.x * halfWidth);
-            int rightX = ceil(v2Position.x * halfWidth);
-            int y = ceil(v2Position.y * halfHeight);
-            int pixelY = y + halfHeight;
+            // horizontal special case
             
-            if (pixelY < ctx.height || pixelY >= 0) {
-                for (int x = leftX; x < rightX + 1; ++x) {
-                    
-                    int pixelX = x + halfWidth;
-                    if (pixelX > ctx.width || pixelX < 0) {
-                        continue;
-                    }
-                    
-                    float lerpVal = (x - v1Position.x * halfWidth) / (v2Position.x * halfWidth - v1Position.x * halfWidth);
+            int sx = v1x < v2x ? 1 : -1;
+            
+            int pixelY = v1y + halfHeight;
+            for (int currX = v1x; currX != v2x + sx; currX += sx) {
+                int pixelX = currX + halfWidth;
+                
+                if (pixelX > -1 && pixelX < ctx.width && pixelY > -1 && pixelY < ctx.height) {
+                    float lerpVal = static_cast<float>(currX - v1x) / static_cast<float>(v2x - v1x);
                     lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
-
+                    
                     // shade and set pixel
                     shadeFragment(lerpedVarying, uniforms, pixelOutput);
                     
                     // update depth and color buffers with our rendering context
                     // this is ARGB
                     int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
-                    ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
-                    ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
-                    ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
-                    ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
+                    ctx.colorBuffer[pixelBase] = _HACK_fast_floor(pixelOutput.color.a * 255);
+                    ctx.colorBuffer[pixelBase + 1] = _HACK_fast_floor(pixelOutput.color.r * 255);
+                    ctx.colorBuffer[pixelBase + 2] = _HACK_fast_floor(pixelOutput.color.g * 255);
+                    ctx.colorBuffer[pixelBase + 3] = _HACK_fast_floor(pixelOutput.color.b * 255);
                 }
             }
         } else if (dx == 0) {
-            // run through all pixels between the 2 vertices in y direction
-            int x = ceil(v2Position.x) * halfWidth;
-            int pixelX = x + halfWidth;
+            // vertical special case
             
-            if (pixelX < ctx.width || pixelX >= 0) {
-                for (int y = bottomY; y < topY + 1; ++y) {
-                    
-                    int pixelY = y + halfHeight;
-                    if (pixelY > ctx.height || pixelY < 0) {
-                        continue;
-                    }
-                    
-                    float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
+            int sy = v1y < v2y ? 1 : -1;
+            
+            int pixelX = v1x + halfWidth;
+            for (int currY = v1y; currY != v2y + sy; currY += sy) {
+                int pixelY = currY + halfHeight;
+                
+                if (pixelX > -1 && pixelX < ctx.width && pixelY > -1 && pixelY < ctx.height) {
+                    float lerpVal = static_cast<float>(currY - v1y) / static_cast<float>(v2y - v1y);
                     lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
                     
                     // shade and set pixel
@@ -294,42 +325,57 @@ inline void __HACK_rasterize_wireframe_triangle(const HACK_Context<VARY_TYPE> &c
                     // update depth and color buffers with our rendering context
                     // this is ARGB
                     int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
-                    ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
-                    ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
-                    ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
-                    ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
+                    ctx.colorBuffer[pixelBase] = _HACK_fast_floor(pixelOutput.color.a * 255);
+                    ctx.colorBuffer[pixelBase + 1] = _HACK_fast_floor(pixelOutput.color.r * 255);
+                    ctx.colorBuffer[pixelBase + 2] = _HACK_fast_floor(pixelOutput.color.g * 255);
+                    ctx.colorBuffer[pixelBase + 3] = _HACK_fast_floor(pixelOutput.color.b * 255);
                 }
             }
         } else {
             // general case
             
-            // this is slow, should be optimized
-            float gradient = dx / dy;
+            int currX = v1x;
+            int currY = v1y;
             
-            for (int y = bottomY; y < topY + 1; ++y) {
-                // line equation
-                int x = ceil(v1Position.x * halfWidth + (y - v1Position.y * halfHeight) * gradient);
+            int sx = v1x < v2x ? 1 : -1;
+            int sy = v1y < v2y ? 1 : -1;
+            
+            int err = (dx > dy ? dx : -dy) / 2;
+            int err2;
+            
+            for (;;) {
+                int pixelY = currY + halfHeight;
+                int pixelX = currX + halfWidth;
                 
-                int pixelY = y + halfHeight;
-                int pixelX = x + halfWidth;
-                if (pixelX >= ctx.width || pixelX < 0) {
-                    continue;
+                if (pixelX > -1 && pixelX < ctx.width && pixelY > -1 && pixelY < ctx.height) {
+                    float lerpVal = (dx > dy) ? static_cast<float>(currX - v1x) / static_cast<float>(v2x - v1x)
+                                              : static_cast<float>(currY - v1y) / static_cast<float>(v2y - v1y);
+                    lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
+                    
+                    // shade and set pixel
+                    shadeFragment(lerpedVarying, uniforms, pixelOutput);
+                    
+                    // update depth and color buffers with our rendering context
+                    // this is ARGB
+                    int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
+                    ctx.colorBuffer[pixelBase] = _HACK_fast_floor(pixelOutput.color.a * 255);
+                    ctx.colorBuffer[pixelBase + 1] = _HACK_fast_floor(pixelOutput.color.r * 255);
+                    ctx.colorBuffer[pixelBase + 2] = _HACK_fast_floor(pixelOutput.color.g * 255);
+                    ctx.colorBuffer[pixelBase + 3] = _HACK_fast_floor(pixelOutput.color.b * 255);
                 }
-                if (pixelY >= ctx.height || pixelY < 0) {
-                    continue;
+                
+                if (currX == v2x && currY == v2y) break;
+                
+                err2 = err;
+                
+                if (err2 > -dx) {
+                    err -= dy;
+                    currX += sx;
                 }
-                
-                float lerpVal = (y - v1Position.y * halfHeight) / (v2Position.y * halfHeight - v1Position.y * halfHeight);
-                lerp(v1.varying, v2.varying, lerpVal, lerpedVarying);
-                shadeFragment(lerpedVarying, uniforms, pixelOutput);
-                
-                // update depth and color buffers with our rendering context
-                // this is ARGB
-                int pixelBase = (pixelX + (ctx.height - 1 - pixelY) * (ctx.width)) * 4;
-                ctx.colorBuffer[pixelBase] = floor(pixelOutput.color.a * 255);
-                ctx.colorBuffer[pixelBase + 1] = floor(pixelOutput.color.r * 255);
-                ctx.colorBuffer[pixelBase + 2] = floor(pixelOutput.color.g * 255);
-                ctx.colorBuffer[pixelBase + 3] = floor(pixelOutput.color.b * 255);
+                if (err2 < dy) {
+                    err += dx;
+                    currY += sy;
+                }
             }
         }
     }

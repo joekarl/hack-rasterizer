@@ -22,6 +22,7 @@ struct HACK_Context
     HACK_Scanline<VARY_TYPE> *scanlines;
     bool enableBackfaceCulling;
     unsigned char *colorBuffer;
+    float zClipNear, zClipFar;
 };
 
 /**
@@ -64,6 +65,18 @@ struct HACK_Vec4 {
         };
     };
 };
+
+inline HACK_Vec3 _HACK_Cross_Product(const HACK_Vec3 &v1, const HACK_Vec3 &v2) {
+    HACK_Vec3 result;
+    result.x = v1.y * v2.z - v1.z * v2.y;
+    result.y = v1.z * v2.x - v1.x * v2.z;
+    result.z = v1.x * v2.y - v1.y * v2.x;
+    return result;
+}
+
+inline float _HACK_Dot_Product(const HACK_Vec3 &v1, const HACK_Vec3 &v2) {
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
 
 /**
  * Output of a fragment shader,

@@ -9,7 +9,7 @@
 #ifndef demoTypes_h
 #define demoTypes_h
 
-#include "hack_types.hpp"
+#include "hack.hpp"
 
 struct Demo_Vec3 {
     float x, y, z;
@@ -59,6 +59,12 @@ struct Uniform {
 };
 
 template<>
+inline void debugPrint<HACK_vertex<VertexVarying>>(const HACK_vertex<VertexVarying> &v) {
+    NSLog(@"v position {%f, %f, %f}", v.position.x, v.position.y, v.position.z);
+    NSLog(@"v color {%f, %f, %f}", v.varying.color.x, v.varying.color.y, v.varying.color.z);
+}
+
+template<>
 inline void lerp<Demo_Vec3>(const Demo_Vec3 &v1, const Demo_Vec3 &v2, float lerpVal, Demo_Vec3 &output)
 {
     output.x = (v2.x - v1.x) * lerpVal + v1.x;
@@ -71,6 +77,7 @@ inline void lerp<VertexVarying>(const VertexVarying &v1, const VertexVarying &v2
 {
     lerp(v1.color, v2.color, lerpVal, output.color);
 }
+
 
 
 #endif /* demoTypes_h */
